@@ -125,7 +125,7 @@ fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
                         r.title,
                         inverted = isLive,
                         secondary = if (isLive) stringResource(R.string.notif_recording) + " · " + RecordService.clock(live.elapsedMs)
-                        else r.whenLabel + " · " + RecordService.clock(r.durationMs) + " · " + kindLabel(r.kind) + " · " + statusLabel(r, settings.configured),
+                        else r.whenPrefix + RecordService.clock(r.durationMs) + " · " + kindLabel(r.kind) + " · " + statusLabel(r, settings.configured),
                         onClick = { if (isLive) nav.push(Screen.Record) else nav.push(Screen.Detail(r.id)) }
                     )
                 }
@@ -238,7 +238,7 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = rowPadH, vertical = rowPadV * 0.6f), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         T(RecordService.clock(position.toLong()) + " / " + RecordService.clock((if (duration > 0) duration else r.durationMs.toInt()).toLong()), maxLines = 1, align = TextAlign.Start)
-                        Small(r.whenLabel + " · " + kindLabel(r.kind) + " · " + statusLabel(r, settings.configured) + (if (r.cleaned && app.store.cleanAudio(r).exists()) " · " + stringResource(R.string.playing_cleaned) else ""), maxLines = 2)
+                        Small(r.whenPrefix + kindLabel(r.kind) + " · " + statusLabel(r, settings.configured) + (if (r.cleaned && app.store.cleanAudio(r).exists()) " · " + stringResource(R.string.playing_cleaned) else ""), maxLines = 2)
                     }
                     Box(Modifier.padding(start = 16.dp).background(if (playing) colors.fg else Color.Transparent).noRippleClickable {
                         if (playing) { player.pause(); playing = false } else { runCatching { player.start() }; playing = true }

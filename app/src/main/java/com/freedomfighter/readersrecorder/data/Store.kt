@@ -34,6 +34,8 @@ data class Recording(
 ) {
     /** The date and time, shown small under the title. */
     val whenLabel: String get() = defaultTitle(createdAt)
+    /** The date line's prefix — nothing while the title itself is still the date. */
+    val whenPrefix: String get() = if (title.trim() == whenLabel) "" else "$whenLabel · "
     /** The effective transcriber, given the settings' default. */
     fun mode(default: String): String = via.ifBlank { default }
     /** Server-side stem: date and time, then the title, safe for any file system. */
