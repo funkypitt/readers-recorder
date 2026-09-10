@@ -1,0 +1,13 @@
+A black-and-white, text-only voice recorder made for e-ink phones and for anyone who wants their recordings to stay their own. No icons, no colours: white on black or black on white, serif, sans or mono, three text sizes. Part of the Reader's family of apps (Reader's Launcher, Notes, Tasks, Calendar…). An answer to the Pixel Recorder that keeps your recordings off Google's servers.
+
+• One list, newest first: title, length, kind, where it stands. The one frequent action, ● record, is an inverted row at the bottom of the list; the widget and the launcher tile do the same in one tap.
+• Recording page: the running time, large; a level line; the kind (memo, lecture, conversation, tap to change); pause and ■ stop. Recording runs in a foreground service under a wake lock, with a silent notification carrying pause and stop, so the screen can go off. AAC 128 kb/s, 48 kHz mono; lectures and conversations use the phone's unprocessed audio source when it offers one.
+• A recording's page: play/pause with a position rule, the transcript in paragraphs, rename, share the audio or the transcript, delete.
+• Transcription on the phone with whisper.cpp, and loudness normalisation, without any server.
+• Optional cloud folder on your own WebDAV server (Infomaniak kDrive, Nextcloud…), set up in three questions, where your own computer can clean the sound and transcribe it with WhisperX using the worker script from the app's repository; the transcript and the cleaned audio come back to the phone. By default nothing leaves the phone.
+
+A standard home-screen widget for any launcher: ● record with the latest recording under it, a live chronometer and ■ while recording. Reader's Launcher shows the same on its recorder tile, and its text opens the latest recording so the transcript is one tap away.
+
+No account with anyone but your own server, no tracking. English, French, German, Spanish, Portuguese, Russian. Free software, MIT licence.
+
+Pierre Gallaz · developed with Claude Code

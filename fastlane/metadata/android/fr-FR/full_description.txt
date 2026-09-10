@@ -1,0 +1,13 @@
+Un enregistreur vocal noir et blanc, texte seulement, pensé pour les téléphones e-ink et pour qui veut que ses enregistrements restent les siens. Pas d'icônes, pas de couleurs : blanc sur noir ou noir sur blanc, serif, sans ou mono, trois tailles de texte. Fait partie de la famille Reader's (Reader's Launcher, Notes, Tasks, Calendar…). Une réponse au Pixel Recorder qui garde vos enregistrements hors des serveurs de Google.
+
+• Une liste, du plus récent au plus ancien : titre, durée, genre, où il en est. L'action fréquente, ● enregistrer, est une ligne inversée au bas de la liste ; le widget et la tuile du lanceur font pareil en un tap.
+• Page d'enregistrement : le temps qui court, en grand ; une ligne de niveau ; le genre (mémo, cours, conversation, un tap pour changer) ; pause et ■ stop. L'enregistrement tourne dans un service au premier plan sous verrou d'éveil, avec une notification silencieuse portant pause et stop, l'écran peut donc s'éteindre. AAC 128 kb/s, 48 kHz mono ; cours et conversations utilisent la source audio non traitée du téléphone quand il en offre une.
+• Page d'un enregistrement : lecture/pause avec une règle de position, la transcription en paragraphes, renommer, partager l'audio ou la transcription, supprimer.
+• Transcription sur le téléphone avec whisper.cpp, et normalisation du volume, sans aucun serveur.
+• Dossier cloud optionnel sur votre propre serveur WebDAV (Infomaniak kDrive, Nextcloud…), réglé en trois questions, où votre propre ordinateur peut nettoyer le son et le transcrire avec WhisperX grâce au script du dépôt de l'application ; la transcription et l'audio nettoyé reviennent sur le téléphone. Par défaut rien ne quitte le téléphone.
+
+Un widget standard pour n'importe quel lanceur : ● enregistrer avec le dernier enregistrement dessous, un chronomètre en direct et ■ pendant l'enregistrement. Reader's Launcher montre la même chose sur sa tuile enregistreur, et son texte ouvre le dernier enregistrement, la transcription à un tap.
+
+Pas de compte ailleurs que sur votre propre serveur, pas de pistage. Anglais, français, allemand, espagnol, portugais, russe. Logiciel libre, licence MIT.
+
+Pierre Gallaz · développé avec Claude Code
