@@ -28,29 +28,45 @@ data class Recording(
     /** Last sync error for this recording, if any. */
     val error: String = "",
     /** Who transcribes THIS one: "phone", "cloud", or "" = whatever the settings say. */
-    val via: String = ""
+    val via: String = "",
+    /** True once the user typed a title; until then the title is automatic (date, then the transcript's first words). */
+    val named: Boolean = false
 ) {
+    /** The date and time, shown small under the title. */
+    val whenLabel: String get() = defaultTitle(createdAt)
     /** The effective transcriber, given the settings' default. */
     fun mode(default: String): String = via.ifBlank { default }
     /** Server-side stem: date and time, then the title, safe for any file system. */
     val base: String get() {
         val d = Instant.ofEpochMilli(createdAt).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm"))
-        val untitled = title.isBlank() || title.trim() == defaultTitle(createdAt)
+        // Only a title typed by hand goes into the file name: automatic ones change when the transcript arrives.
         val t = title.trim().replace(Regex("[\\\\/:*?\"<>|\\n\\r\\t]"), " ").replace(Regex("\\s+"), " ").trim().take(60)
-        return if (untitled) "${d}_$kind" else "${d}_$t"
+        return if (!named || t.isEmpty()) "${d}_$kind" else "${d}_$t"
     }
     val status: String get() = when { transcribed -> "transcribed"; cleaned -> "cleaned"; uploaded -> "uploaded"; else -> "phone" }
 
     companion object {
         fun defaultTitle(createdAt: Long): String =
             Instant.ofEpochMilli(createdAt).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm")).lowercase()
+
+        /** The transcript's first words as a title (about 40 characters, cut at a word), or null when there is nothing usable. */
+        fun titleFrom(transcript: String): String? {
+            val text = transcript.trim().replace(Regex("\\s+"), " ")
+            if (text.isEmpty() || text.startsWith("(")) return null
+            if (text.length <= 44) return text.trimEnd('.', ',', ';', ':', '!', '?', ' ')
+            val cut = text.take(44)
+            val atWord = cut.lastIndexOf(' ').takeIf { it > 20 } ?: 44
+            return cut.take(atWord).trimEnd('.', ',', ';', ':', '!', '?', ' ', '-', '—') + "…"
+        }
     }
 }
 
 class Store(context: Context) {
     val dir: File = File(context.filesDir, "recordings").apply { mkdirs() }
     private val index = File(context.filesDir, "recordings.json")
-    private val _recordings = MutableStateFlow(load())
+    private val _recordings = MutableStateFlow(load().map { r ->
+        if (!r.named && r.transcribed && r.title == Recording.defaultTitle(r.createdAt)) r.copy(title = Recording.titleFrom(File(dir, "${r.id}.txt").takeIf { it.exists() }?.readText() ?: "") ?: r.title) else r
+    })
     /** Newest first. */
     val recordings: StateFlow<List<Recording>> = _recordings
     var onChange: (() -> Unit)? = null
@@ -60,7 +76,9 @@ class Store(context: Context) {
         (0 until arr.length()).map { i ->
             val o = arr.getJSONObject(i)
             Recording(o.getString("id"), o.optString("title"), o.getLong("createdAt"), o.optLong("durationMs"), o.optString("kind", "memo"),
-                o.optBoolean("uploaded"), o.optBoolean("cleaned"), o.optBoolean("transcribed"), o.optString("error"), o.optString("via"))
+                o.optBoolean("uploaded"), o.optBoolean("cleaned"), o.optBoolean("transcribed"), o.optString("error"), o.optString("via"),
+                // older entries: a title that is not the date was typed by hand
+                o.optBoolean("named", o.optString("title").let { it.isNotBlank() && it != Recording.defaultTitle(o.getLong("createdAt")) }))
         }.sortedByDescending { it.createdAt }
     }.getOrDefault(emptyList())
 
@@ -68,7 +86,7 @@ class Store(context: Context) {
         val arr = JSONArray()
         list.forEach { r ->
             arr.put(JSONObject().put("id", r.id).put("title", r.title).put("createdAt", r.createdAt).put("durationMs", r.durationMs).put("kind", r.kind)
-                .put("uploaded", r.uploaded).put("cleaned", r.cleaned).put("transcribed", r.transcribed).put("error", r.error).put("via", r.via))
+                .put("uploaded", r.uploaded).put("cleaned", r.cleaned).put("transcribed", r.transcribed).put("error", r.error).put("via", r.via).put("named", r.named))
         }
         val tmp = File(index.parentFile, "recordings.json.tmp")
         tmp.writeText(arr.toString())
@@ -98,5 +116,17 @@ class Store(context: Context) {
         get(id)?.let { r -> audio(r).delete(); cleanTarget(r, "m4a").delete(); cleanTarget(r, "mp3").delete(); transcriptFile(r).delete(); segmentsFile(r).delete() }
         save(_recordings.value.filterNot { it.id == id })
     }
-    fun setTranscript(r: Recording, text: String) { transcriptFile(r).writeText(text); update(r.copy(transcribed = true, error = "")) }
+    /** Save the transcript; an automatic title becomes its first words. */
+    fun setTranscript(r: Recording, text: String) {
+        transcriptFile(r).writeText(text)
+        val auto = if (r.named) r.title else Recording.titleFrom(text) ?: Recording.defaultTitle(r.createdAt)
+        update(r.copy(transcribed = true, error = "", title = auto))
+    }
+
+    /** A title typed by hand; blank goes back to automatic. */
+    fun rename(r: Recording, title: String): Recording {
+        val t = title.trim()
+        val new = if (t.isEmpty()) r.copy(named = false, title = Recording.titleFrom(transcript(r)) ?: Recording.defaultTitle(r.createdAt)) else r.copy(named = true, title = t)
+        update(new); return new
+    }
 }

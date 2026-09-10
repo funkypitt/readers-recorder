@@ -18,8 +18,10 @@ much bigger model.
 
 ## The phone
 
-* One list, newest first: title, length, kind, where it stands (on this phone · to upload ·
-  in the cloud · cleaned · transcribed). The one frequent action, **● record**, is an inverted
+* One list, newest first: the title, and under it in small dim type the date and time, the
+  length, the kind, where it stands (on this phone · to upload · in the cloud · cleaned ·
+  transcribed). A title is automatic — the date and time, then the transcript's first words
+  once it exists — unless you typed one (rename; a blank rename goes back to automatic). The one frequent action, **● record**, is an inverted
   row at the bottom of the list; the widget and the launcher tile do the same in one tap.
 * Recording page: the running time, large; a level line; the kind (memo, lecture,
   conversation — tap to change; a conversation gets its speakers told apart); pause and ■ stop.
