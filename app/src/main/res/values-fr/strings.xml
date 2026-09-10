@@ -64,4 +64,24 @@
     <string name="transcript_pending">envoyé — la transcription apparaîtra ici quand votre ordinateur aura fait son travail</string>
     <string name="transcript_not_yet_uploaded">pas encore envoyé — ce sera fait à la prochaine synchronisation</string>
     <string name="transcript_needs_folder">pas de transcription : les enregistrements restent sur ce téléphone. Toucher pour configurer un dossier cloud, par lequel votre ordinateur les transcrit.</string>
+    <string name="local_only_phone">sur ce téléphone seulement — transcrit ici, rien ne quitte le téléphone</string>
+    <string name="processing">qui transcrit</string>
+    <string name="processing_phone">ce téléphone (whisper)</string>
+    <string name="processing_cloud">mon ordinateur, via le dossier cloud</string>
+    <string name="processing_off">personne</string>
+    <string name="model">modèle sur le téléphone (plus gros = meilleur, plus lent)</string>
+    <string name="model_not_yet">téléchargé à la première utilisation</string>
+    <string name="clean_on_phone">faire aussi une copie nettoyée (volume, ronflement)</string>
+    <string name="channel_processing">transcription</string>
+    <string name="phase_model">téléchargement du modèle · %1$d%%</string>
+    <string name="phase_decode">lecture du son</string>
+    <string name="phase_transcribe">transcription · %1$d%%</string>
+    <string name="phase_clean">nettoyage du son</string>
+    <string name="phase_waiting">en attente</string>
+    <string name="no_speech">(aucune parole détectée)</string>
+    <string name="transcript_phone_pending">la transcription apparaîtra ici quand le téléphone l\'aura traitée — toucher pour lancer maintenant</string>
+    <string name="transcript_off">pas de transcription : elle est désactivée dans les réglages. Toucher pour changer.</string>
+    <string name="transcribe_now">transcrire maintenant</string>
+    <string name="cloud_guide">Héberger les enregistrements sur kDrive (Infomaniak), pas à pas\n1. Ouvrez kDrive dans un navigateur. Son adresse web contient un numéro après /drive/ — par exemple ksuite.infomaniak.com/kdrive/app/drive/123456/… — ce numéro suffit à l\'app comme serveur.\n2. Identifiant : l\'e-mail avec lequel vous vous connectez chez Infomaniak.\n3. Mot de passe : votre mot de passe Infomaniak. Si la double authentification est active, créez plutôt un mot de passe d\'application (Manager Infomaniak → Sécurité → Mots de passe d\'application) et utilisez celui-là.\n4. L\'app crée un dossier Recordings à la racine de votre kDrive et y dépose chaque enregistrement, avec un petit fichier .json à côté. Renommez ou supprimez un enregistrement dans l\'app : le dossier suit.\n5. Pour recevoir les transcriptions et le son nettoyé, lancez le script « worker » du dépôt de l\'app sur un ordinateur où l\'application kDrive synchronise ce dossier ; il dépose un .txt et un .mp3 nettoyé à côté de chaque enregistrement, et le téléphone les récupère à la synchronisation suivante.\nNextcloud et tout autre serveur WebDAV fonctionnent de même : indiquez l\'adresse https:// complète comme serveur.</string>
+    <string name="cloud_how">comment configurer, pas à pas</string>
 </resources>

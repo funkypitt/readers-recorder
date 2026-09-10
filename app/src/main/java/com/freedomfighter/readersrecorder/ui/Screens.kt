@@ -52,6 +52,8 @@ import com.freedomfighter.readersrecorder.data.Prefs
 import com.freedomfighter.readersrecorder.data.Recording
 import com.freedomfighter.readersrecorder.data.TextSize
 import com.freedomfighter.readersrecorder.sync.Sync
+import com.freedomfighter.readersrecorder.ProcessService
+import com.freedomfighter.readersrecorder.whisper.Models
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -78,6 +80,7 @@ fun kindLabel(kind: String): String = stringResource(when (kind) { "lecture" -> 
 
 @Composable
 fun statusLabel(r: Recording, configured: Boolean): String = when {
+    ProcessService.Live.id == r.id -> ProcessService.phaseLabel(LocalContext.current, ProcessService.Live.phase, ProcessService.Live.percent)
     r.error.isNotBlank() -> r.error
     r.transcribed -> stringResource(R.string.status_transcribed)
     r.cleaned -> stringResource(R.string.status_cleaned)
@@ -126,7 +129,14 @@ fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
                     )
                 }
             }
-            Small(if (settings.configured) status.ifBlank { stringResource(R.string.synced_folder, settings.folder) } else stringResource(R.string.local_only), Modifier.padding(horizontal = rowPadH).padding(bottom = 6.dp).noRippleClickable { if (settings.configured) app.sync() else nav.push(Screen.Settings(setup = true)) }, maxLines = 2)
+            Small(
+                when {
+                    ProcessService.Live.id.isNotBlank() -> ProcessService.phaseLabel(LocalContext.current, ProcessService.Live.phase, ProcessService.Live.percent)
+                    settings.configured -> status.ifBlank { stringResource(R.string.synced_folder, settings.folder) }
+                    else -> stringResource(R.string.local_only_phone)
+                },
+                Modifier.padding(horizontal = rowPadH).padding(bottom = 6.dp).noRippleClickable { if (settings.configured) app.sync() else nav.push(Screen.Settings()) }, maxLines = 2
+            )
             Rule()
             // The one thing this app is for, one tap from the list, inverted so it cannot be missed.
             if (live.recording) TextRow("■  " + stringResource(R.string.notif_recording) + " · " + RecordService.clock(live.elapsedMs), inverted = true) { nav.push(Screen.Record) }
@@ -239,7 +249,10 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
                 // ---- transcript ----
                 when {
                     transcript.isNotBlank() -> T(transcript, Modifier.padding(horizontal = rowPadH, vertical = 16.dp), size = typo.title, align = TextAlign.Start, lineHeightMul = 1.4f)
-                    r.error.isNotBlank() -> Small(r.error, Modifier.padding(horizontal = rowPadH, vertical = 16.dp), maxLines = 6)
+                    ProcessService.Live.id == r.id -> Small(ProcessService.phaseLabel(context, ProcessService.Live.phase, ProcessService.Live.percent), Modifier.padding(horizontal = rowPadH, vertical = 16.dp), maxLines = 3)
+                    r.error.isNotBlank() -> Small(r.error, Modifier.padding(horizontal = rowPadH, vertical = 16.dp).noRippleClickable { app.store.update(r.copy(error = "")); ProcessService.kick(context) }, maxLines = 6)
+                    settings.processing == "phone" -> Small(stringResource(R.string.transcript_phone_pending), Modifier.padding(horizontal = rowPadH, vertical = 16.dp).noRippleClickable { ProcessService.kick(context) }, maxLines = 4)
+                    settings.processing == "off" -> Small(stringResource(R.string.transcript_off), Modifier.padding(horizontal = rowPadH, vertical = 16.dp).noRippleClickable { nav.push(Screen.Settings()) }, maxLines = 4)
                     settings.configured -> Small(stringResource(if (r.uploaded) R.string.transcript_pending else R.string.transcript_not_yet_uploaded), Modifier.padding(horizontal = rowPadH, vertical = 16.dp), maxLines = 4)
                     else -> Small(stringResource(R.string.transcript_needs_folder), Modifier.padding(horizontal = rowPadH, vertical = 16.dp).noRippleClickable { nav.push(Screen.Settings(setup = true)) }, maxLines = 5)
                 }
@@ -252,6 +265,8 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
             if (transcript.isNotBlank()) add(MenuItem(stringResource(R.string.share_transcript)) { shareText(context, transcript, r.title) })
             if (settings.configured && !r.uploaded) add(MenuItem(stringResource(R.string.upload_now)) { app.sync() })
             if (settings.configured && r.uploaded && r.error.isNotBlank()) add(MenuItem(stringResource(R.string.retry)) { app.store.update(r.copy(error = "")); app.sync() })
+            if (settings.processing == "phone" && !r.transcribed) add(MenuItem(stringResource(R.string.transcribe_now)) { app.store.update(r.copy(error = "")); ProcessService.kick(context) })
+            if (ProcessService.Live.id == r.id) add(MenuItem(stringResource(R.string.stop)) { ProcessService.cancel(context) })
             add(MenuItem(stringResource(R.string.delete), secondary = if (r.uploaded) stringResource(R.string.delete_hint_server) else null) {
                 runCatching { player.stop() }; playing = false
                 val s = settings
@@ -286,6 +301,7 @@ fun shareText(context: android.content.Context, text: String, title: String) {
 
 @Composable
 fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
+    val context = LocalContext.current
     val s by app.prefs.settings.collectAsState()
     val colors = LocalColors.current
     val typo = LocalTypo.current
@@ -300,16 +316,35 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
             ScreenTitle(stringResource(R.string.settings), onBack = { nav.pop() })
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 Small(stringResource(R.string.cloud_hint), Modifier.padding(horizontal = rowPadH).padding(top = 16.dp, bottom = 4.dp), maxLines = 8)
+                var guide by remember { mutableStateOf(false) }
                 if (!s.configured) {
                     TextRow(stringResource(R.string.cloud_setup), secondary = stringResource(R.string.local_only_short)) { draft = Triple("", "", ""); prompt = "server" }
+                    TextRow(stringResource(R.string.cloud_how), size = typo.title) { guide = !guide }
+                    if (guide) Small(stringResource(R.string.cloud_guide), Modifier.padding(horizontal = rowPadH).padding(bottom = 10.dp), maxLines = 40)
                 } else {
                     TextRow(s.server.removePrefix("https://"), secondary = stringResource(R.string.server) + " · " + s.username) { draft = Triple(s.server, s.username, s.password); prompt = "server" }
                     TextRow(s.folder, secondary = stringResource(R.string.folder)) { prompt = "folder" }
                     TextRow(if (syncing) stringResource(R.string.syncing) else status.ifBlank { stringResource(R.string.sync_now) }, secondary = stringResource(R.string.sync_now)) { app.sync() }
                     TextRow(if (s.fetchCleaned) stringResource(R.string.on) else stringResource(R.string.off), secondary = stringResource(R.string.fetch_cleaned)) { app.prefs.setFetchCleaned(!s.fetchCleaned) }
-                    TextRow(stringResource(R.string.forget_server), size = typo.title) { app.prefs.setAccount("", s.folder, "", "") }
+                    TextRow(stringResource(R.string.forget_server), size = typo.title) { app.prefs.setAccount("", s.folder, "", ""); app.prefs.setProcessing("phone") }
+                    TextRow(stringResource(R.string.cloud_how), size = typo.title) { guide = !guide }
+                    if (guide) Small(stringResource(R.string.cloud_guide), Modifier.padding(horizontal = rowPadH).padding(bottom = 10.dp), maxLines = 40)
                 }
                 Rule(Modifier.padding(vertical = 8.dp))
+                // Who does the work: the phone itself (whisper.cpp), the computer behind the cloud folder, or nobody.
+                val modes = if (s.configured) listOf("phone", "cloud", "off") else listOf("phone", "off")
+                TextRow(stringResource(when (s.processing) { "cloud" -> R.string.processing_cloud; "off" -> R.string.processing_off; else -> R.string.processing_phone }), secondary = stringResource(R.string.processing)) {
+                    val next = modes[(modes.indexOf(s.processing).coerceAtLeast(0) + 1) % modes.size]
+                    app.prefs.setProcessing(next); if (next == "phone") ProcessService.kick(context)
+                }
+                if (s.processing == "phone") {
+                    val m = Models.byKey(s.model)
+                    val downloading by Models.downloading.collectAsState()
+                    TextRow(m.label + " · " + m.mb + " MB" + (if (Models.isDownloaded(context, m)) "" else if (downloading >= 0) " · $downloading%" else " · " + stringResource(R.string.model_not_yet)), secondary = stringResource(R.string.model)) {
+                        app.prefs.setModel(Models.ALL[(Models.ALL.indexOfFirst { it.key == s.model }.coerceAtLeast(0) + 1) % Models.ALL.size].key)
+                    }
+                    TextRow(if (s.cleanOnPhone) stringResource(R.string.on) else stringResource(R.string.off), secondary = stringResource(R.string.clean_on_phone)) { app.prefs.setCleanOnPhone(!s.cleanOnPhone) }
+                }
                 val languages = Prefs.languages()
                 TextRow(if (s.language.isBlank()) stringResource(R.string.language_auto) else java.util.Locale(s.language).getDisplayLanguage(java.util.Locale.getDefault()), secondary = stringResource(R.string.language)) {
                     app.prefs.setLanguage(languages[(languages.indexOf(s.language).coerceAtLeast(0) + 1) % languages.size])
@@ -335,7 +370,7 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
             "username" -> TextPrompt(stringResource(R.string.ask_username), initial = draft.second, confirm = stringResource(R.string.next),
                 onDone = { v -> draft = Triple(draft.first, v, draft.third); prompt = "password" }, onCancel = { prompt = null })
             "password" -> TextPrompt(stringResource(R.string.ask_password), initial = draft.third, password = true, confirm = stringResource(R.string.connect),
-                onDone = { v -> app.prefs.setAccount(draft.first, s.folder, draft.second, v); prompt = null; app.sync() }, onCancel = { prompt = null })
+                onDone = { v -> app.prefs.setAccount(draft.first, s.folder, draft.second, v); app.prefs.setProcessing("cloud"); prompt = null; app.sync() }, onCancel = { prompt = null })
             "folder" -> TextPrompt(stringResource(R.string.folder), initial = s.folder, onDone = { v -> app.prefs.setAccount(s.server, v, s.username, s.password); prompt = null; app.sync() }, onCancel = { prompt = null })
         }
     }

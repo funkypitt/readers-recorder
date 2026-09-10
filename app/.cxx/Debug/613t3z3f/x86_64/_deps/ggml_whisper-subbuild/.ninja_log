@@ -1,0 +1,21 @@
+# ninja log v5
+0	8	1789040537273093115	ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-mkdir	631329a66f680dd8
+0	8	1789040537273093115	/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/x86_64/_deps/ggml_whisper-subbuild/ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-mkdir	631329a66f680dd8
+8	11	1789040537275093197	ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-download	ff7b29a422a4b85b
+8	11	1789040537275093197	/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/x86_64/_deps/ggml_whisper-subbuild/ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-download	ff7b29a422a4b85b
+11	13	1789040537278093319	ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-update	da5cd31889584c4c
+11	13	1789040537278093319	/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/x86_64/_deps/ggml_whisper-subbuild/ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-update	da5cd31889584c4c
+13	15	1789040537280093400	ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-patch	138fd45a31d2b621
+13	15	1789040537280093400	/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/x86_64/_deps/ggml_whisper-subbuild/ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-patch	138fd45a31d2b621
+15	18	1789040537283093523	ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-configure	769758ee6fd6d863
+15	18	1789040537283093523	/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/x86_64/_deps/ggml_whisper-subbuild/ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-configure	769758ee6fd6d863
+18	20	1789040537285093604	ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-build	1d488fcbb31581e4
+18	20	1789040537285093604	/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/x86_64/_deps/ggml_whisper-subbuild/ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-build	1d488fcbb31581e4
+21	23	1789040537288093726	ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-install	e8e08f71ac93d764
+21	23	1789040537288093726	/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/x86_64/_deps/ggml_whisper-subbuild/ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-install	e8e08f71ac93d764
+23	26	1789040537290093807	ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-test	dbc835de4a11e440
+23	26	1789040537290093807	/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/x86_64/_deps/ggml_whisper-subbuild/ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-test	dbc835de4a11e440
+26	29	1789040537294093970	CMakeFiles/ggml_whisper-populate-complete	2ff781e752b876b1
+26	29	1789040537294093970	ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-done	2ff781e752b876b1
+26	29	1789040537294093970	/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/x86_64/_deps/ggml_whisper-subbuild/CMakeFiles/ggml_whisper-populate-complete	2ff781e752b876b1
+26	29	1789040537294093970	/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/x86_64/_deps/ggml_whisper-subbuild/ggml_whisper-populate-prefix/src/ggml_whisper-populate-stamp/ggml_whisper-populate-done	2ff781e752b876b1

@@ -75,7 +75,13 @@ class Store(context: Context) {
 
     fun get(id: String): Recording? = _recordings.value.firstOrNull { it.id == id }
     fun audio(r: Recording): File = File(dir, "${r.id}.m4a")
-    fun cleanAudio(r: Recording): File = File(dir, "${r.id}.clean.mp3")
+    fun cleanAudio(r: Recording): File = listOf("m4a", "mp3").map { File(dir, "${r.id}.clean.$it") }.firstOrNull { it.exists() } ?: File(dir, "${r.id}.clean.mp3")
+    fun cleanTarget(r: Recording, ext: String): File = File(dir, "${r.id}.clean.$ext")
+    fun segmentsFile(r: Recording): File = File(dir, "${r.id}.segments.json")
+    fun writeSegments(r: Recording, segments: List<com.freedomfighter.readersrecorder.whisper.Segment>, language: String) {
+        val arr = JSONArray(); segments.forEach { arr.put(JSONObject().put("start", it.startMs / 1000.0).put("end", it.endMs / 1000.0).put("text", it.text)) }
+        segmentsFile(r).writeText(JSONObject().put("language", language).put("segments", arr).toString())
+    }
     /** What plays: the cleaned copy when it is here, else the original. */
     fun playable(r: Recording): File = cleanAudio(r).takeIf { r.cleaned && it.exists() } ?: audio(r)
     fun transcriptFile(r: Recording): File = File(dir, "${r.id}.txt")
@@ -85,7 +91,7 @@ class Store(context: Context) {
     fun update(r: Recording) = save(_recordings.value.map { if (it.id == r.id) r else it })
     fun update(id: String, f: (Recording) -> Recording) { get(id)?.let { update(f(it)) } }
     fun delete(id: String) {
-        get(id)?.let { r -> audio(r).delete(); cleanAudio(r).delete(); transcriptFile(r).delete() }
+        get(id)?.let { r -> audio(r).delete(); cleanTarget(r, "m4a").delete(); cleanTarget(r, "mp3").delete(); transcriptFile(r).delete(); segmentsFile(r).delete() }
         save(_recordings.value.filterNot { it.id == id })
     }
     fun setTranscript(r: Recording, text: String) { transcriptFile(r).writeText(text); update(r.copy(transcribed = true, error = "")) }

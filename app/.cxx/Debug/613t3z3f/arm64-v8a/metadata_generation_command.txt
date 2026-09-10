@@ -1,0 +1,20 @@
+                        -H/home/freedomfighter/code/readers-recorder/app/src/main/cpp
+-DCMAKE_SYSTEM_NAME=Android
+-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+-DCMAKE_SYSTEM_VERSION=26
+-DANDROID_PLATFORM=android-26
+-DANDROID_ABI=arm64-v8a
+-DCMAKE_ANDROID_ARCH_ABI=arm64-v8a
+-DANDROID_NDK=/home/freedomfighter/android-sdk/ndk/27.1.12297006
+-DCMAKE_ANDROID_NDK=/home/freedomfighter/android-sdk/ndk/27.1.12297006
+-DCMAKE_TOOLCHAIN_FILE=/home/freedomfighter/android-sdk/ndk/27.1.12297006/build/cmake/android.toolchain.cmake
+-DCMAKE_MAKE_PROGRAM=/home/freedomfighter/android-sdk/cmake/3.22.1/bin/ninja
+-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/home/freedomfighter/code/readers-recorder/app/build/intermediates/cxx/Debug/613t3z3f/obj/arm64-v8a
+-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/home/freedomfighter/code/readers-recorder/app/build/intermediates/cxx/Debug/613t3z3f/obj/arm64-v8a
+-DCMAKE_BUILD_TYPE=Debug
+-B/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/arm64-v8a
+-GNinja
+-DGGML_NATIVE=OFF
+-DANDROID_STL=c++_static
+                        Build command args: []
+                        Version: 2

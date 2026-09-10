@@ -28,11 +28,13 @@ object Sync {
             try {
                 dav.putFile(folder + encodeSegment(r.base + ".m4a"), f, "audio/mp4")
                 dav.put(folder + encodeSegment(r.base + ".json"), meta(r, s).toString(2))
+                // Transcribed here already: send the text along, so the workstation leaves this one alone.
+                if (r.transcribed) dav.put(folder + encodeSegment(r.base + ".txt"), store.transcript(r))
                 store.update(r.copy(uploaded = true, error = "")); up++
             } catch (e: Exception) { store.update(r.copy(error = e.message ?: "upload failed")) }
         }
         // ---- down ----
-        val waiting = store.recordings.value.filter { it.uploaded && (!it.transcribed || (s.fetchCleaned && !it.cleaned)) }
+        val waiting = if (s.processing == "cloud") store.recordings.value.filter { it.uploaded && (!it.transcribed || (s.fetchCleaned && !it.cleaned)) } else emptyList()
         if (waiting.isNotEmpty()) {
             val names = dav.list(folder).map { it.name }.toSet()
             for (r in waiting) {
@@ -41,7 +43,7 @@ object Sync {
                         store.setTranscript(r, dav.get(folder + encodeSegment(r.base + ".txt"))); tr++
                     }
                     if (s.fetchCleaned && !r.cleaned && r.base + "_nettoye.mp3" in names) {
-                        if (dav.download(folder + encodeSegment(r.base + "_nettoye.mp3"), store.cleanAudio(r))) { store.update(r.id) { it.copy(cleaned = true) }; cl++ }
+                        if (dav.download(folder + encodeSegment(r.base + "_nettoye.mp3"), store.cleanTarget(r, "mp3"))) { store.update(r.id) { it.copy(cleaned = true) }; cl++ }
                     }
                     if (!r.transcribed && r.base + ".error.txt" in names) {
                         store.update(r.id) { it.copy(error = dav.get(folder + encodeSegment(r.base + ".error.txt")).lines().firstOrNull()?.take(120) ?: "worker error") }

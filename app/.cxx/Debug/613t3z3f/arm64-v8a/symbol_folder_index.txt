@@ -1,0 +1,1 @@
+/home/freedomfighter/code/readers-recorder/app/build/intermediates/cxx/Debug/613t3z3f/obj/arm64-v8a

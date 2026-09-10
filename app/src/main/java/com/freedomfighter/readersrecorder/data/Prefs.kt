@@ -26,7 +26,13 @@ data class Settings(
     /** Kind the next recording starts on: memo, lecture, conversation. */
     val kind: String = "memo",
     /** Fetch the cleaned audio back and play it instead of the original. */
-    val fetchCleaned: Boolean = true
+    val fetchCleaned: Boolean = true,
+    /** Who transcribes: "phone" (whisper.cpp here, the default), "cloud" (the worker behind the WebDAV folder), "off". */
+    val processing: String = "phone",
+    /** whisper.cpp model on the phone: base, small, medium. */
+    val model: String = "small",
+    /** Also make the normalised listening copy on the phone. */
+    val cleanOnPhone: Boolean = true
 ) {
     val configured: Boolean get() = server.isNotBlank()
     val folderUrl: String get() = server.trim().trimEnd('/') + "/" + folder.trim().trim('/').split("/").joinToString("/") { encodeSegment(it) } + "/"
@@ -53,7 +59,10 @@ class Prefs(context: Context) {
         password = sp.getString("password", "") ?: "",
         language = sp.getString("language", deviceLanguage()) ?: deviceLanguage(),
         kind = sp.getString("kind", "memo") ?: "memo",
-        fetchCleaned = sp.getBoolean("fetch_cleaned", true)
+        fetchCleaned = sp.getBoolean("fetch_cleaned", true),
+        processing = sp.getString("processing", "phone") ?: "phone",
+        model = sp.getString("model", "small") ?: "small",
+        cleanOnPhone = sp.getBoolean("clean_on_phone", true)
     )
     private inline fun <reified E : Enum<E>> enumOr(name: String?, default: E): E =
         name?.let { runCatching { enumValueOf<E>(it) }.getOrNull() } ?: default
@@ -67,6 +76,9 @@ class Prefs(context: Context) {
     fun setLanguage(v: String) = sp.edit().putString("language", v.trim()).apply()
     fun setKind(v: String) = sp.edit().putString("kind", v).apply()
     fun setFetchCleaned(v: Boolean) = sp.edit().putBoolean("fetch_cleaned", v).apply()
+    fun setProcessing(v: String) = sp.edit().putString("processing", v).apply()
+    fun setModel(v: String) = sp.edit().putString("model", v).apply()
+    fun setCleanOnPhone(v: Boolean) = sp.edit().putBoolean("clean_on_phone", v).apply()
     fun toggleTheme(systemIsDark: Boolean) {
         val dark = when (_settings.value.theme) { ThemeMode.DARK -> true; ThemeMode.LIGHT -> false; ThemeMode.SYSTEM -> systemIsDark }
         setTheme(if (dark) ThemeMode.LIGHT else ThemeMode.DARK)

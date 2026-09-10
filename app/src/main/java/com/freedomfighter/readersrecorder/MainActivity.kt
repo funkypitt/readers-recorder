@@ -76,6 +76,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         (application as App).sync()
+        ProcessService.kick(this)
         // Opened while recording (from the notification or the widget): straight to the recording page.
         if (RecordService.Live.recording && nav.current == Screen.List) nav.push(Screen.Record)
     }

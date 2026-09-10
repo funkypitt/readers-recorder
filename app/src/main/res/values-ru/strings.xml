@@ -64,4 +64,24 @@
     <string name="transcript_pending">отправлено — расшифровка появится здесь, когда компьютер закончит работу</string>
     <string name="transcript_not_yet_uploaded">ещё не отправлено — при следующей синхронизации</string>
     <string name="transcript_needs_folder">расшифровки нет: записи остаются на этом телефоне. Нажмите, чтобы настроить облачную папку, через которую компьютер их расшифрует.</string>
+    <string name="local_only_phone">только на этом телефоне — расшифровка здесь, ничего не уходит с телефона</string>
+    <string name="processing">кто расшифровывает</string>
+    <string name="processing_phone">этот телефон (whisper)</string>
+    <string name="processing_cloud">мой компьютер, через облачную папку</string>
+    <string name="processing_off">никто</string>
+    <string name="model">модель на телефоне (больше = лучше, медленнее)</string>
+    <string name="model_not_yet">загружается при первом использовании</string>
+    <string name="clean_on_phone">также делать очищенную копию (громкость, гул)</string>
+    <string name="channel_processing">расшифровка</string>
+    <string name="phase_model">загрузка модели · %1$d%%</string>
+    <string name="phase_decode">чтение звука</string>
+    <string name="phase_transcribe">расшифровка · %1$d%%</string>
+    <string name="phase_clean">очистка звука</string>
+    <string name="phase_waiting">ожидание</string>
+    <string name="no_speech">(речь не обнаружена)</string>
+    <string name="transcript_phone_pending">расшифровка появится здесь, когда телефон закончит — нажмите, чтобы начать сейчас</string>
+    <string name="transcript_off">без расшифровки: она отключена в настройках. Нажмите, чтобы изменить.</string>
+    <string name="transcribe_now">расшифровать сейчас</string>
+    <string name="cloud_guide">Как хранить записи на kDrive (Infomaniak), по шагам\n1. Откройте kDrive в браузере. В его веб-адресе после /drive/ стоит номер — например ksuite.infomaniak.com/kdrive/app/drive/123456/… — этого номера приложению достаточно в качестве сервера.\n2. Имя пользователя: e-mail, с которым вы входите в Infomaniak.\n3. Пароль: ваш пароль Infomaniak. Если включена двухфакторная защита, создайте вместо него пароль приложения (Manager Infomaniak → Безопасность → Пароли приложений) и используйте его.\n4. Приложение создаёт папку Recordings в корне вашего kDrive и кладёт туда каждую запись с небольшим файлом .json рядом. Переименуйте или удалите запись в приложении — папка последует.\n5. Чтобы получать расшифровки и очищенный звук, запустите скрипт worker из репозитория приложения на компьютере, где приложение kDrive синхронизирует эту папку; он оставляет рядом с каждой записью .txt и очищенный .mp3, а телефон забирает их при следующей синхронизации.\nNextcloud и любой другой WebDAV-сервер работают так же: укажите полный адрес https:// как сервер.</string>
+    <string name="cloud_how">как настроить, по шагам</string>
 </resources>

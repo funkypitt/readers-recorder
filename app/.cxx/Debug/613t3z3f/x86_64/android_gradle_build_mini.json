@@ -1,0 +1,27 @@
+{
+  "buildFiles": [
+    "/home/freedomfighter/code/readers-recorder/app/src/main/cpp/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/freedomfighter/android-sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/freedomfighter/android-sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "whisper::@6890427a1f51a3e7e1df": {
+      "artifactName": "whisper",
+      "abi": "x86_64",
+      "output": "/home/freedomfighter/code/readers-recorder/app/build/intermediates/cxx/Debug/613t3z3f/obj/x86_64/libwhisper.so",
+      "runtimeFiles": []
+    }
+  }
+}

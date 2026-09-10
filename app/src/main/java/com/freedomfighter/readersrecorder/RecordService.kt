@@ -143,6 +143,7 @@ class RecordService : Service() {
             if (duration < 500 || f == null || !f.exists()) app.store.delete(id)      // a tap by mistake is not a recording
             else app.store.update(id) { it.copy(durationMs = duration) }
             Live.recording = false; Live.paused = false; Live.id = ""; Live.elapsedMs = 0L
+            ProcessService.kick(this)
             app.sync()
         }
         ticker?.cancel(); ticker = null

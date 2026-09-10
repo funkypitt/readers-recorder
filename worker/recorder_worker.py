@@ -70,6 +70,15 @@ def release_gpu_lock():
         _gpu_lock_fh = None
 
 
+def free_vram_mib():
+    try:
+        out = subprocess.run(["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
+                             capture_output=True, text=True, timeout=10)
+        return int(out.stdout.strip().splitlines()[0])
+    except Exception:
+        return 0
+
+
 def free_gpu_for_task(min_free_mib=6000, timeout=60.0):
     """Unload any resident Ollama model, then wait until the VRAM really is free."""
     try:
@@ -231,10 +240,17 @@ def transcribe(audio, language, diarize, args):
     import torch
     import whisperx
     device = "cuda" if torch.cuda.is_available() and not args.cpu else "cpu"
-    # The CPU path needs neither the toolkit's GPU lock nor the VRAM purge.
+    # The CPU path needs neither the toolkit's GPU lock nor the VRAM purge. On the GPU, the
+    # toolkit lock serialises the big models — but a long job (a days-long training run)
+    # can hold it while leaving plenty of VRAM: WhisperX needs ~4 GB, so when that much is
+    # free we go ahead beside it instead of waiting for the lock.
+    locked = False
     if device == "cuda":
-        acquire_gpu_lock()
-        free_gpu_for_task()
+        if free_vram_mib() >= args.vram_needed:
+            log(f"  GPU has {free_vram_mib()} MiB free — running beside the other task")
+        else:
+            acquire_gpu_lock(); locked = True
+            free_gpu_for_task(min_free_mib=args.vram_needed)
     try:
         compute = "float16" if device == "cuda" else "int8"
         model = whisperx.load_model(args.model, device, compute_type=compute, language=language or None)
@@ -270,7 +286,7 @@ def transcribe(audio, language, diarize, args):
             torch.cuda.empty_cache()
         return result["segments"], lang, speakers
     finally:
-        if device == "cuda":
+        if locked:
             release_gpu_lock()
 
 
@@ -343,6 +359,7 @@ def main():
     ap.add_argument("--moteur", default="dfn", choices=["auto", "dfn", "mossformer2", "afftdn"], help="nettoyer.py engine")
     ap.add_argument("--no-nettoyer", action="store_true", help="ffmpeg loudnorm only")
     ap.add_argument("--cpu", action="store_true")
+    ap.add_argument("--vram-needed", type=int, default=6000, help="MiB of free VRAM that lets the worker run beside another GPU task")
     ap.add_argument("--hf-token", default=None, help="Hugging Face token for speaker diarization (or HF_TOKEN)")
     ap.add_argument("--interval", type=int, default=60, help="seconds between two looks at the folder")
     ap.add_argument("--once", action="store_true", help="one pass, then exit")
