@@ -8,8 +8,13 @@ conversation with one tap; if you want, the recording goes to **your own cloud f
 normalises its loudness and transcribes it with WhisperX. The transcript and the cleaned
 audio come back to the phone.
 
-**By default nothing leaves the phone.** The cloud folder is optional, set up in three
-questions (server — for kDrive, just the number in its web address —, username, password).
+**By default nothing leaves the phone — and the phone transcribes by itself**, with
+[whisper.cpp](https://github.com/ggerganov/whisper.cpp) vendored in (quantised `base`,
+`small` or `medium` model, fetched once, 57–539 MB), plus a light-touch cleaned copy (60 Hz
+high-pass, constant gain to −19 LUFS, no compression). The cloud folder is optional, set up in
+three questions (server — for kDrive, just the number in its web address —, username,
+password), with a step-by-step guide in the settings; it hands the work to your computer's
+much bigger model.
 
 ## The phone
 
@@ -25,8 +30,15 @@ questions (server — for kDrive, just the number in its web address —, userna
 * A recording's page: play/pause with a position rule (tap to seek), the transcript in
   paragraphs (speakers labelled for a conversation), rename, share the audio or the
   transcript, delete (here and in the cloud).
-* Settings: the cloud folder (or "forget it — recordings stay here"), the language spoken
-  (the phone's language, English, or detected), the default kind, the look.
+* Settings: who transcribes (this phone · my computer through the cloud folder · nobody), the
+  model on the phone, the cleaned copy, the cloud folder (or "forget it — recordings stay
+  here"), the language spoken (the phone's language, English, or detected), the default kind,
+  the look.
+* On the phone, `ProcessService` (a foreground service with a progress notification) decodes
+  the recording with MediaCodec, resamples to 16 kHz, runs whisper.cpp on the big cores (two
+  arm64 builds, one with fp16 arithmetic chosen at runtime), writes the transcript and the
+  timed segments, then makes the normalised AAC copy. A recording transcribed on the phone is
+  uploaded with its `.txt`, so the workstation worker leaves it alone.
 * **Widget** for any launcher: "● record" with the latest recording under it; while
   recording, a live Chronometer and ■. **Reader's Launcher tile** ("recorder"): the same, and
   its text opens the latest recording so the transcript is one tap away.
@@ -61,3 +73,11 @@ export JAVA_HOME=/path/to/jdk-21
 ```
 
 minSdk 26, targetSdk 34. MIT.
+
+## Crédits / Credits
+
+© 2026 Pierre Gallaz. Développé avec [Claude Code](https://claude.com/claude-code) (Anthropic).
+Licence MIT, voir `LICENSE`.
+
+© 2026 Pierre Gallaz. Developed with [Claude Code](https://claude.com/claude-code) (Anthropic).
+MIT licence, see `LICENSE`.

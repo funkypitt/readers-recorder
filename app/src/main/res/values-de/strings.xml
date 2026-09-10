@@ -40,7 +40,8 @@
     <string name="on">an</string>
     <string name="off">aus</string>
     <string name="about">aufnehmen, und den eigenen Computer bereinigen und transkribieren lassen</string>
-    <string name="cloud_hint">Aufnahmen bleiben auf diesem Telefon, solange kein Cloud-Ordner eingerichtet ist (WebDAV: kDrive, Nextcloud…). Danach wird jede Aufnahme dorthin hochgeladen; ein kleiner Worker auf Ihrem Computer bereinigt sie, normalisiert die Lautheit und transkribiert sie mit Whisper; Transkript und bereinigter Ton kommen hierher zurück. Nichts geht an Google.</string>
+    <string name="credits">Pierre Gallaz · entwickelt mit Claude Code</string>
+    <string name="cloud_hint">Aufnahmen bleiben auf diesem Telefon, und das Telefon transkribiert sie selbst mit Whisper (das Modell wird einmal geladen). Ein Cloud-Ordner ist optional (WebDAV: kDrive, Nextcloud…): dann wird jede Aufnahme auch dorthin hochgeladen, und wenn der kleine Worker aus dem Repository der App auf Ihrem Computer läuft, übernimmt er Bereinigung und Transkription mit einem viel grösseren Modell; Transkript und bereinigter Ton kommen hierher zurück. Nichts geht an Google.</string>
     <string name="cloud_setup">Cloud-Ordner einrichten</string>
     <string name="server">Server</string>
     <string name="folder">Ordner auf dem Server</string>

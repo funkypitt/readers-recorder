@@ -361,6 +361,7 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
                 TextRow(if (s.haptics) stringResource(R.string.on) else stringResource(R.string.off), secondary = stringResource(R.string.haptics)) { app.prefs.setHaptics(!s.haptics) }
                 Rule(Modifier.padding(vertical = 8.dp))
                 TextRow(stringResource(R.string.app_name), secondary = stringResource(R.string.about)) { }
+                TextRow(stringResource(R.string.credits)) { }
             }
             Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars))
         }

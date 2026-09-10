@@ -40,7 +40,8 @@
     <string name="on">ativa</string>
     <string name="off">inativa</string>
     <string name="about">gravar, e deixar o seu próprio computador limpar e transcrever</string>
-    <string name="cloud_hint">As gravações ficam neste telemóvel enquanto não configurar uma pasta na nuvem (WebDAV: kDrive, Nextcloud…). Depois cada gravação é enviada para lá, um pequeno worker no seu computador limpa-a, normaliza o volume e transcreve-a com o Whisper; a transcrição e o áudio limpo voltam para aqui. Nada vai para a Google.</string>
+    <string name="credits">Pierre Gallaz · desenvolvido com Claude Code</string>
+    <string name="cloud_hint">As gravações ficam neste telemóvel, e é o próprio telemóvel que as transcreve com o Whisper (o modelo é descarregado uma vez). Uma pasta na nuvem é opcional (WebDAV: kDrive, Nextcloud…): cada gravação é então também enviada para lá, e se o pequeno worker do repositório da app correr no seu computador, ele assume a limpeza e a transcrição com um modelo muito maior; a transcrição e o áudio limpo voltam para aqui. Nada vai para a Google.</string>
     <string name="cloud_setup">configurar uma pasta na nuvem</string>
     <string name="server">servidor</string>
     <string name="folder">pasta no servidor</string>

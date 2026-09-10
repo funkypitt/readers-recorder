@@ -40,7 +40,8 @@
     <string name="on">actif</string>
     <string name="off">inactif</string>
     <string name="about">enregistrer, et laisser votre propre ordinateur nettoyer et transcrire</string>
-    <string name="cloud_hint">Les enregistrements restent sur ce téléphone tant qu\'aucun dossier cloud n\'est configuré (WebDAV : kDrive, Nextcloud…). Ensuite chaque enregistrement y est déposé, un petit worker sur votre ordinateur le nettoie, normalise son volume et le transcrit avec Whisper ; la transcription et le son nettoyé reviennent ici. Rien ne part chez Google.</string>
+    <string name="credits">Pierre Gallaz · développé avec Claude Code</string>
+    <string name="cloud_hint">Les enregistrements restent sur ce téléphone, et c\'est le téléphone lui-même qui les transcrit avec Whisper (le modèle est téléchargé une fois). Un dossier cloud est facultatif (WebDAV : kDrive, Nextcloud…) : chaque enregistrement y est alors aussi déposé, et si le petit « worker » du dépôt de l\'app tourne sur votre ordinateur, il reprend le nettoyage et la transcription avec un modèle bien plus gros ; transcription et son nettoyé reviennent ici. Rien ne part chez Google.</string>
     <string name="cloud_setup">configurer un dossier cloud</string>
     <string name="server">serveur</string>
     <string name="folder">dossier sur le serveur</string>

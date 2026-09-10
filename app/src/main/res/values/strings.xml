@@ -42,7 +42,8 @@
     <string name="on">on</string>
     <string name="off">off</string>
     <string name="about">record, and let your own computer clean and transcribe</string>
-    <string name="cloud_hint">Recordings stay on this phone unless you set up a cloud folder (WebDAV: kDrive, Nextcloud…). Then each recording is uploaded there, and a small worker on your computer cleans it, normalises its loudness and transcribes it with Whisper; the transcript and the cleaned audio come back here. Nothing goes to Google.</string>
+    <string name="credits">Pierre Gallaz · developed with Claude Code</string>
+    <string name="cloud_hint">Recordings stay on this phone, and the phone itself transcribes them with Whisper (the model is fetched once). A cloud folder is optional (WebDAV: kDrive, Nextcloud…): then each recording is also uploaded there, and if the small worker from the app\'s repository runs on your computer, it takes over the cleaning and the transcription with a much bigger model; transcript and cleaned audio come back here. Nothing goes to Google.</string>
     <string name="cloud_setup">set up a cloud folder</string>
     <string name="server">server</string>
     <string name="folder">folder on the server</string>
