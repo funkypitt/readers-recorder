@@ -227,12 +227,14 @@ def label(spk):
 
 
 def transcribe(audio, language, diarize, args):
-    acquire_gpu_lock()
-    try:
+    import torch
+    import whisperx
+    device = "cuda" if torch.cuda.is_available() and not args.cpu else "cpu"
+    # The CPU path needs neither the toolkit's GPU lock nor the VRAM purge.
+    if device == "cuda":
+        acquire_gpu_lock()
         free_gpu_for_task()
-        import torch
-        import whisperx
-        device = "cuda" if torch.cuda.is_available() and not args.cpu else "cpu"
+    try:
         compute = "float16" if device == "cuda" else "int8"
         model = whisperx.load_model(args.model, device, compute_type=compute, language=language or None)
         wav = whisperx.load_audio(str(audio))
@@ -261,7 +263,8 @@ def transcribe(audio, language, diarize, args):
             torch.cuda.empty_cache()
         return result["segments"], lang, speakers
     finally:
-        release_gpu_lock()
+        if device == "cuda":
+            release_gpu_lock()
 
 
 def process(folder, name, names, args):
