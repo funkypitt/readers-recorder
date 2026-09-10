@@ -105,6 +105,7 @@ fun Progress(fraction: Float, modifier: Modifier = Modifier) {
 
 @Composable
 fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
+    val context = LocalContext.current
     val colors = LocalColors.current
     val typo = LocalTypo.current
     val settings by app.prefs.settings.collectAsState()
@@ -113,21 +114,47 @@ fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
     val live = RecordService.Live
     var menu by remember { mutableStateOf(false) }
     var viaMenu by remember { mutableStateOf(false) }
+    // Long press on a row: its own menu; "select several" turns the rows into boxes for a bulk delete.
+    var rowMenu by remember { mutableStateOf<String?>(null) }
+    var renaming by remember { mutableStateOf<String?>(null) }
+    var selecting by remember { mutableStateOf(false) }
+    val selected = remember { mutableStateListOf<String>() }
+    val scope = rememberCoroutineScope()
+    BackHandler(enabled = selecting) { selecting = false; selected.clear() }
+    fun deleteMany(ids: List<String>) {
+        val s = settings
+        val gone = ids.mapNotNull { app.store.get(it) }
+        gone.forEach { app.store.delete(it.id) }
+        scope.launch(Dispatchers.IO) { gone.forEach { runCatching { Sync.deleteRemote(it, s) } } }
+        selecting = false; selected.clear()
+    }
     val recordings = all.filter { it.durationMs > 0 || it.id == live.id }
     Page {
         Column(Modifier.fillMaxSize()) {
-            ScreenTitle(stringResource(R.string.app_title), onBack = null, trailing = "⋯", onTrailing = { menu = true })
+            if (selecting) ScreenTitle(stringResource(R.string.selected_n, selected.size), onBack = { selecting = false; selected.clear() })
+            else ScreenTitle(stringResource(R.string.app_title), onBack = null, trailing = "⋯", onTrailing = { menu = true })
             LazyColumn(Modifier.weight(1f)) {
                 if (recordings.isEmpty()) item { Small(stringResource(R.string.empty), Modifier.padding(horizontal = rowPadH, vertical = 16.dp), maxLines = 4) }
                 items(recordings, key = { it.id }) { r ->
                     val isLive = r.id == live.id && live.recording
-                    TextRow(
-                        r.title,
-                        inverted = isLive,
-                        secondary = if (isLive) stringResource(R.string.notif_recording) + " · " + RecordService.clock(live.elapsedMs)
-                        else r.whenPrefix + RecordService.clock(r.durationMs) + " · " + kindLabel(r.kind) + " · " + statusLabel(r, settings.configured),
-                        onClick = { if (isLive) nav.push(Screen.Record) else nav.push(Screen.Detail(r.id)) }
-                    )
+                    val checked = r.id in selected
+                    Box(Modifier.fillMaxWidth().pressable(
+                        onClick = {
+                            when {
+                                isLive -> nav.push(Screen.Record)
+                                selecting -> if (checked) selected.remove(r.id) else selected.add(r.id)
+                                else -> nav.push(Screen.Detail(r.id))
+                            }
+                        },
+                        onLongPress = { if (!isLive) { if (selecting) { if (!checked) selected.add(r.id) } else rowMenu = r.id } }
+                    )) {
+                        TextRow(
+                            (if (selecting && !isLive) (if (checked) "☑  " else "☐  ") else "") + r.title,
+                            inverted = isLive,
+                            secondary = if (isLive) stringResource(R.string.notif_recording) + " · " + RecordService.clock(live.elapsedMs)
+                            else r.whenPrefix + RecordService.clock(r.durationMs) + " · " + kindLabel(r.kind) + " · " + statusLabel(r, settings.configured)
+                        )
+                    }
                 }
             }
             Small(
@@ -142,10 +169,33 @@ fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
             // The one thing this app is for, one tap from the list, inverted so it cannot be missed.
             if (live.recording) TextRow("■  " + stringResource(R.string.notif_recording) + " · " + RecordService.clock(live.elapsedMs), inverted = true) { nav.push(Screen.Record) }
             // Tap records; a long press asks, for this one recording, who will transcribe it.
+            else if (selecting) TextRow(stringResource(R.string.delete_selected, selected.size), inverted = selected.isNotEmpty()) { if (selected.isNotEmpty()) deleteMany(selected.toList()) }
             else Box(Modifier.fillMaxWidth().pressable(onClick = { activity.record() }, onLongPress = { if (settings.configured) viaMenu = true else activity.record() })) {
                 TextRow("●  " + stringResource(R.string.record), inverted = true)
             }
             Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars).background(if (live.recording || true) colors.fg else colors.bg).fillMaxWidth())
+        }
+        rowMenu?.let { id ->
+            val r = all.firstOrNull { it.id == id }
+            if (r == null) rowMenu = null else {
+                val transcript = app.store.transcript(r)
+                TextMenu(r.title, buildList {
+                    add(MenuItem(stringResource(R.string.rename)) { renaming = r.id })
+                    add(MenuItem(stringResource(R.string.share_audio)) { shareFile(context, app.store.playable(r), "audio/*", r.title) })
+                    if (transcript.isNotBlank()) add(MenuItem(stringResource(R.string.share_transcript)) { shareText(context, transcript, r.title) })
+                    add(MenuItem(stringResource(R.string.delete), secondary = if (r.uploaded) stringResource(R.string.delete_hint_server) else null) { deleteMany(listOf(r.id)) })
+                    add(MenuItem(stringResource(R.string.select_several)) { selecting = true; selected.clear(); selected.add(r.id) })
+                }, onDismiss = { rowMenu = null })
+            }
+        }
+        renaming?.let { id ->
+            val r = all.firstOrNull { it.id == id }
+            if (r == null) renaming = null else TextPrompt(stringResource(R.string.rename), initial = r.title, onDone = { t ->
+                val s = settings
+                val new = app.store.rename(r, t)
+                scope.launch(Dispatchers.IO) { runCatching { Sync.renameRemote(r, new, s) } }
+                renaming = null
+            }, onCancel = { renaming = null })
         }
         if (viaMenu) TextMenu(stringResource(R.string.via_title), listOf(
             MenuItem(stringResource(R.string.via_phone), secondary = if (settings.processing == "phone") stringResource(R.string.via_default) else null) { activity.record("phone") },

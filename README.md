@@ -32,6 +32,9 @@ much bigger model.
 * A recording's page: play/pause with a position rule (tap to seek), the transcript in
   paragraphs (speakers labelled for a conversation), rename, share the audio or the
   transcript, delete (here and in the cloud).
+* A long press on a row offers what the recording's page offers — rename, share the audio,
+  share the transcript, delete — plus "select several…": rows become boxes to tick, the
+  bottom row deletes them all (here and in the cloud folder).
 * A long press on "● record" (once a cloud folder exists) asks, for that one recording, who
   will transcribe it: this phone, or my computer through the cloud folder — handy to compare
   the two on the same kind of material. The choice is shown in the recording's status line.

@@ -92,4 +92,7 @@
     <string name="via_cloud_none">ainda sem pasta na nuvem — toque para a configurar</string>
     <string name="via_short_phone">no telemóvel</string>
     <string name="via_short_cloud">pelo meu computador</string>
+    <string name="select_several">selecionar várias…</string>
+    <string name="selected_n">%1$d selecionadas</string>
+    <string name="delete_selected">apagar %1$d</string>
 </resources>

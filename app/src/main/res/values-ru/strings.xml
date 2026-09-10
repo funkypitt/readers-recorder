@@ -92,4 +92,7 @@
     <string name="via_cloud_none">облачной папки ещё нет — нажмите, чтобы настроить</string>
     <string name="via_short_phone">на телефоне</string>
     <string name="via_short_cloud">мой компьютер</string>
+    <string name="select_several">выбрать несколько…</string>
+    <string name="selected_n">выбрано: %1$d</string>
+    <string name="delete_selected">удалить %1$d</string>
 </resources>

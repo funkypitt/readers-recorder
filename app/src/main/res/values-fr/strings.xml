@@ -92,4 +92,7 @@
     <string name="via_cloud_none">pas encore de dossier cloud — toucher pour le configurer</string>
     <string name="via_short_phone">sur le téléphone</string>
     <string name="via_short_cloud">par mon ordinateur</string>
+    <string name="select_several">en sélectionner plusieurs…</string>
+    <string name="selected_n">%1$d sélectionnés</string>
+    <string name="delete_selected">supprimer %1$d</string>
 </resources>
