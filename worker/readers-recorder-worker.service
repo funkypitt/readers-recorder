@@ -1,0 +1,15 @@
+[Unit]
+Description=Reader's Recorder worker — cleans and transcribes recordings dropped in the kDrive folder
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/code/traduction
+ExecStart=%h/miniconda3/envs/interview/bin/python %h/code/readers-recorder/worker/recorder_worker.py --folder %h/kDrive/Recordings --interval 60
+Restart=on-failure
+RestartSec=60
+Environment=PYTHONUNBUFFERED=1
+# Environment=HF_TOKEN=hf_…      # for speaker labels on conversations
+
+[Install]
+WantedBy=default.target
