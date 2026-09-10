@@ -87,4 +87,11 @@
     <string name="transcribe_now">transcribe now</string>
     <string name="cloud_guide">How to host recordings on kDrive (Infomaniak)\n1. Open kDrive in a browser. Its web address contains a number after /drive/ — for example ksuite.infomaniak.com/kdrive/app/drive/123456/… — that number is all the app needs as the server.\n2. Username: the e-mail you log in to Infomaniak with.\n3. Password: your Infomaniak password. If two-factor authentication is on, create an application password instead (Infomaniak Manager → Security → Application passwords) and use that one.\n4. The app creates a folder named Recordings at the root of your kDrive and puts every recording there, with a small .json beside it. Rename or delete a recording in the app and the folder follows.\n5. To get transcripts and cleaned sound back, run the worker script from the app\'s repository on a computer where the kDrive app syncs that folder; it leaves a .txt and a cleaned .mp3 next to each recording, and the phone fetches them at the next sync.\nNextcloud and any other WebDAV server work the same way: give the full https:// address as the server.</string>
     <string name="cloud_how">how to set it up, step by step</string>
+    <string name="via_title">this recording will be transcribed by…</string>
+    <string name="via_phone">this phone</string>
+    <string name="via_cloud">my computer, through the cloud folder</string>
+    <string name="via_default">the usual choice</string>
+    <string name="via_cloud_none">no cloud folder yet — tap to set one up</string>
+    <string name="via_short_phone">on the phone</string>
+    <string name="via_short_cloud">by my computer</string>
 </resources>

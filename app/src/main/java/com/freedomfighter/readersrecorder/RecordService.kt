@@ -64,14 +64,14 @@ class RecordService : Service() {
             ACTION_STOP -> stop()
             ACTION_PAUSE -> pause()
             ACTION_RESUME -> resume()
-            ACTION_TOGGLE -> if (recorder == null) start() else stop()
-            ACTION_START -> if (recorder == null) start()
+            ACTION_TOGGLE -> if (recorder == null) start("") else stop()
+            ACTION_START -> if (recorder == null) start(intent.getStringExtra(EXTRA_VIA) ?: "")
             else -> if (recorder == null) stopSelf()
         }
         return START_NOT_STICKY
     }
 
-    private fun start() {
+    private fun start(via: String) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             // No microphone permission yet: the app has to ask for it first.
             startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -104,7 +104,7 @@ class RecordService : Service() {
                 start()
             }
             // The entry exists from the first second, so a crash never loses the file.
-            app.store.add(Recording(id, Recording.defaultTitle(startedAt), startedAt, 0L, app.prefs.settings.value.kind, uploaded = false, cleaned = false, transcribed = false))
+            app.store.add(Recording(id, Recording.defaultTitle(startedAt), startedAt, 0L, app.prefs.settings.value.kind, uploaded = false, cleaned = false, transcribed = false, via = via))
             Live.recording = true; Live.paused = false; Live.id = id; Live.startedAt = startedAt; Live.elapsedMs = 0L
             startTicker()
         }.onFailure { release(); stopSelf() }
@@ -222,12 +222,13 @@ class RecordService : Service() {
         const val ACTION_PAUSE = "com.freedomfighter.readersrecorder.PAUSE"
         const val ACTION_RESUME = "com.freedomfighter.readersrecorder.RESUME"
         const val ACTION_TOGGLE = "com.freedomfighter.readersrecorder.TOGGLE"
+        const val EXTRA_VIA = "via"
         private const val CHANNEL_ID = "recording"
         private const val NOTIF_ID = 1
 
         fun intent(ctx: Context, action: String): Intent = Intent(ctx, RecordService::class.java).setAction(action)
         fun send(ctx: Context, action: String) = ContextCompat.startForegroundService(ctx, intent(ctx, action))
-        fun start(ctx: Context) = send(ctx, ACTION_START)
+        fun start(ctx: Context, via: String = "") = ContextCompat.startForegroundService(ctx, intent(ctx, ACTION_START).putExtra(EXTRA_VIA, via))
         fun stop(ctx: Context) = send(ctx, ACTION_STOP)
         fun pause(ctx: Context) = send(ctx, ACTION_PAUSE)
         fun resume(ctx: Context) = send(ctx, ACTION_RESUME)

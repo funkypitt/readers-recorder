@@ -85,4 +85,11 @@
     <string name="transcribe_now">transcrire maintenant</string>
     <string name="cloud_guide">Héberger les enregistrements sur kDrive (Infomaniak), pas à pas\n1. Ouvrez kDrive dans un navigateur. Son adresse web contient un numéro après /drive/ — par exemple ksuite.infomaniak.com/kdrive/app/drive/123456/… — ce numéro suffit à l\'app comme serveur.\n2. Identifiant : l\'e-mail avec lequel vous vous connectez chez Infomaniak.\n3. Mot de passe : votre mot de passe Infomaniak. Si la double authentification est active, créez plutôt un mot de passe d\'application (Manager Infomaniak → Sécurité → Mots de passe d\'application) et utilisez celui-là.\n4. L\'app crée un dossier Recordings à la racine de votre kDrive et y dépose chaque enregistrement, avec un petit fichier .json à côté. Renommez ou supprimez un enregistrement dans l\'app : le dossier suit.\n5. Pour recevoir les transcriptions et le son nettoyé, lancez le script « worker » du dépôt de l\'app sur un ordinateur où l\'application kDrive synchronise ce dossier ; il dépose un .txt et un .mp3 nettoyé à côté de chaque enregistrement, et le téléphone les récupère à la synchronisation suivante.\nNextcloud et tout autre serveur WebDAV fonctionnent de même : indiquez l\'adresse https:// complète comme serveur.</string>
     <string name="cloud_how">comment configurer, pas à pas</string>
+    <string name="via_title">cet enregistrement sera transcrit par…</string>
+    <string name="via_phone">ce téléphone</string>
+    <string name="via_cloud">mon ordinateur, via le dossier cloud</string>
+    <string name="via_default">le choix habituel</string>
+    <string name="via_cloud_none">pas encore de dossier cloud — toucher pour le configurer</string>
+    <string name="via_short_phone">sur le téléphone</string>
+    <string name="via_short_cloud">par mon ordinateur</string>
 </resources>

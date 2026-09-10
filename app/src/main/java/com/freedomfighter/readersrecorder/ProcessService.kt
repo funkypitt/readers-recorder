@@ -68,8 +68,7 @@ class ProcessService : Service() {
         try {
             while (!cancelled.get()) {
                 val s = app.prefs.settings.value
-                if (s.processing != "phone") break
-                val r = app.store.recordings.value.firstOrNull { it.durationMs > 0 && !it.transcribed && it.error.isBlank() && it.id != RecordService.Live.id } ?: break
+                val r = app.store.recordings.value.firstOrNull { it.durationMs > 0 && !it.transcribed && it.error.isBlank() && it.mode(s.processing) == "phone" && it.id != RecordService.Live.id } ?: break
                 Live.id = r.id; Live.percent = 0
                 try {
                     withContext(Dispatchers.Default) { processOne(app, r, s.language, s.model) }
@@ -187,8 +186,8 @@ class ProcessService : Service() {
         /** Start the queue if the phone is the transcriber and something waits. */
         fun kick(ctx: Context) {
             val app = ctx.applicationContext as App
-            if (app.prefs.settings.value.processing != "phone") return
-            if (app.store.recordings.value.none { it.durationMs > 0 && !it.transcribed && it.error.isBlank() }) return
+            val default = app.prefs.settings.value.processing
+            if (app.store.recordings.value.none { it.durationMs > 0 && !it.transcribed && it.error.isBlank() && it.mode(default) == "phone" }) return
             ContextCompat.startForegroundService(ctx, Intent(ctx, ProcessService::class.java))
         }
         fun cancel(ctx: Context) = ctx.startService(Intent(ctx, ProcessService::class.java).setAction(ACTION_CANCEL))

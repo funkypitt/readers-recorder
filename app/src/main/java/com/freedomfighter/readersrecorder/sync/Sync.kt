@@ -34,7 +34,7 @@ object Sync {
             } catch (e: Exception) { store.update(r.copy(error = e.message ?: "upload failed")) }
         }
         // ---- down ----
-        val waiting = if (s.processing == "cloud") store.recordings.value.filter { it.uploaded && (!it.transcribed || (s.fetchCleaned && !it.cleaned)) } else emptyList()
+        val waiting = store.recordings.value.filter { it.mode(s.processing) == "cloud" && it.uploaded && (!it.transcribed || (s.fetchCleaned && !it.cleaned)) }
         if (waiting.isNotEmpty()) {
             val names = dav.list(folder).map { it.name }.toSet()
             for (r in waiting) {

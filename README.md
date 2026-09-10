@@ -30,6 +30,9 @@ much bigger model.
 * A recording's page: play/pause with a position rule (tap to seek), the transcript in
   paragraphs (speakers labelled for a conversation), rename, share the audio or the
   transcript, delete (here and in the cloud).
+* A long press on "● record" (once a cloud folder exists) asks, for that one recording, who
+  will transcribe it: this phone, or my computer through the cloud folder — handy to compare
+  the two on the same kind of material. The choice is shown in the recording's status line.
 * Settings: who transcribes (this phone · my computer through the cloud folder · nobody), the
   model on the phone, the cleaned copy, the cloud folder (or "forget it — recordings stay
   here"), the language spoken (the phone's language, English, or detected), the default kind,

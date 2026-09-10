@@ -29,17 +29,18 @@ import com.freedomfighter.readersrecorder.ui.SettingsScreen
 class MainActivity : ComponentActivity() {
     private val nav = Nav()
     /** Set once the microphone is granted, so a tap that asked for it can go on. */
-    private var pendingStart = false
+    private var pendingStart: String? = null
     private val askMic = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { g ->
-        if (g[Manifest.permission.RECORD_AUDIO] == true && pendingStart) { pendingStart = false; RecordService.start(this); nav.push(Screen.Record) }
+        val via = pendingStart
+        if (g[Manifest.permission.RECORD_AUDIO] == true && via != null) { pendingStart = null; RecordService.start(this, via); nav.push(Screen.Record) }
     }
 
     fun micGranted() = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
     /** The frequent action: start recording now, asking for the microphone only the first time. */
-    fun record() {
-        if (micGranted()) { RecordService.start(this); nav.push(Screen.Record) }
-        else { pendingStart = true; askPermissions() }
+    fun record(via: String = "") {
+        if (micGranted()) { RecordService.start(this, via); nav.push(Screen.Record) }
+        else { pendingStart = via; askPermissions() }
     }
 
     private fun askPermissions() {

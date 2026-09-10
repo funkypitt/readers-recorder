@@ -85,4 +85,11 @@
     <string name="transcribe_now">transcrever agora</string>
     <string name="cloud_guide">Guardar as gravações no kDrive (Infomaniak), passo a passo\n1. Abra o kDrive num navegador. O endereço web contém um número depois de /drive/ — por exemplo ksuite.infomaniak.com/kdrive/app/drive/123456/… — esse número basta à app como servidor.\n2. Utilizador: o e-mail com que entra na Infomaniak.\n3. Palavra-passe: a sua palavra-passe Infomaniak. Se a dupla autenticação estiver ativa, crie antes uma palavra-passe de aplicação (Manager Infomaniak → Segurança → Palavras-passe de aplicação) e use essa.\n4. A app cria uma pasta Recordings na raiz do seu kDrive e coloca lá cada gravação, com um pequeno .json ao lado. Renomeie ou apague uma gravação na app e a pasta acompanha.\n5. Para receber transcrições e som limpo, execute o script worker do repositório da app num computador onde a app kDrive sincronize essa pasta; ele deixa um .txt e um .mp3 limpo junto de cada gravação, e o telemóvel vai buscá-los na sincronização seguinte.\nO Nextcloud e qualquer outro servidor WebDAV funcionam da mesma forma: indique o endereço https:// completo como servidor.</string>
     <string name="cloud_how">como configurar, passo a passo</string>
+    <string name="via_title">esta gravação será transcrita por…</string>
+    <string name="via_phone">este telemóvel</string>
+    <string name="via_cloud">o meu computador, pela pasta na nuvem</string>
+    <string name="via_default">a escolha habitual</string>
+    <string name="via_cloud_none">ainda sem pasta na nuvem — toque para a configurar</string>
+    <string name="via_short_phone">no telemóvel</string>
+    <string name="via_short_cloud">pelo meu computador</string>
 </resources>

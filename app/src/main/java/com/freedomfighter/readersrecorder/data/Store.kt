@@ -26,8 +26,12 @@ data class Recording(
     val cleaned: Boolean,
     val transcribed: Boolean,
     /** Last sync error for this recording, if any. */
-    val error: String = ""
+    val error: String = "",
+    /** Who transcribes THIS one: "phone", "cloud", or "" = whatever the settings say. */
+    val via: String = ""
 ) {
+    /** The effective transcriber, given the settings' default. */
+    fun mode(default: String): String = via.ifBlank { default }
     /** Server-side stem: date and time, then the title, safe for any file system. */
     val base: String get() {
         val d = Instant.ofEpochMilli(createdAt).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm"))
@@ -56,7 +60,7 @@ class Store(context: Context) {
         (0 until arr.length()).map { i ->
             val o = arr.getJSONObject(i)
             Recording(o.getString("id"), o.optString("title"), o.getLong("createdAt"), o.optLong("durationMs"), o.optString("kind", "memo"),
-                o.optBoolean("uploaded"), o.optBoolean("cleaned"), o.optBoolean("transcribed"), o.optString("error"))
+                o.optBoolean("uploaded"), o.optBoolean("cleaned"), o.optBoolean("transcribed"), o.optString("error"), o.optString("via"))
         }.sortedByDescending { it.createdAt }
     }.getOrDefault(emptyList())
 
@@ -64,7 +68,7 @@ class Store(context: Context) {
         val arr = JSONArray()
         list.forEach { r ->
             arr.put(JSONObject().put("id", r.id).put("title", r.title).put("createdAt", r.createdAt).put("durationMs", r.durationMs).put("kind", r.kind)
-                .put("uploaded", r.uploaded).put("cleaned", r.cleaned).put("transcribed", r.transcribed).put("error", r.error))
+                .put("uploaded", r.uploaded).put("cleaned", r.cleaned).put("transcribed", r.transcribed).put("error", r.error).put("via", r.via))
         }
         val tmp = File(index.parentFile, "recordings.json.tmp")
         tmp.writeText(arr.toString())

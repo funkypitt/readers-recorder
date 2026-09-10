@@ -79,7 +79,7 @@ class Nav {
 fun kindLabel(kind: String): String = stringResource(when (kind) { "lecture" -> R.string.kind_lecture; "conversation" -> R.string.kind_conversation; else -> R.string.kind_memo })
 
 @Composable
-fun statusLabel(r: Recording, configured: Boolean): String = when {
+fun statusLabel(r: Recording, configured: Boolean): String = (when {
     ProcessService.Live.id == r.id -> ProcessService.phaseLabel(LocalContext.current, ProcessService.Live.phase, ProcessService.Live.percent)
     r.error.isNotBlank() -> r.error
     r.transcribed -> stringResource(R.string.status_transcribed)
@@ -87,7 +87,7 @@ fun statusLabel(r: Recording, configured: Boolean): String = when {
     r.uploaded -> stringResource(R.string.status_uploaded)
     configured -> stringResource(R.string.status_waiting)
     else -> stringResource(R.string.status_phone)
-}
+}) + (if (r.via.isNotBlank()) " · " + stringResource(if (r.via == "cloud") R.string.via_short_cloud else R.string.via_short_phone) else "")
 
 /** A hairline, [fraction] of it in the foreground colour. */
 @Composable
@@ -112,6 +112,7 @@ fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
     val status by app.status.collectAsState()
     val live = RecordService.Live
     var menu by remember { mutableStateOf(false) }
+    var viaMenu by remember { mutableStateOf(false) }
     val recordings = all.filter { it.durationMs > 0 || it.id == live.id }
     Page {
         Column(Modifier.fillMaxSize()) {
@@ -140,9 +141,16 @@ fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
             Rule()
             // The one thing this app is for, one tap from the list, inverted so it cannot be missed.
             if (live.recording) TextRow("■  " + stringResource(R.string.notif_recording) + " · " + RecordService.clock(live.elapsedMs), inverted = true) { nav.push(Screen.Record) }
-            else TextRow("●  " + stringResource(R.string.record), inverted = true) { activity.record() }
+            // Tap records; a long press asks, for this one recording, who will transcribe it.
+            else Box(Modifier.fillMaxWidth().pressable(onClick = { activity.record() }, onLongPress = { if (settings.configured) viaMenu = true else activity.record() })) {
+                TextRow("●  " + stringResource(R.string.record), inverted = true)
+            }
             Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars).background(if (live.recording || true) colors.fg else colors.bg).fillMaxWidth())
         }
+        if (viaMenu) TextMenu(stringResource(R.string.via_title), listOf(
+            MenuItem(stringResource(R.string.via_phone), secondary = if (settings.processing == "phone") stringResource(R.string.via_default) else null) { activity.record("phone") },
+            MenuItem(stringResource(R.string.via_cloud), secondary = if (settings.processing == "cloud") stringResource(R.string.via_default) else null) { activity.record("cloud") }
+        ), onDismiss = { viaMenu = false })
         if (menu) TextMenu(null, buildList {
             if (settings.configured) add(MenuItem(stringResource(R.string.sync_now)) { app.sync() })
             add(MenuItem(kindLabel(settings.kind), secondary = stringResource(R.string.next_kind)) { app.prefs.setKind(Prefs.KINDS[(Prefs.KINDS.indexOf(settings.kind) + 1) % Prefs.KINDS.size]) })
@@ -251,8 +259,8 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
                     transcript.isNotBlank() -> T(transcript, Modifier.padding(horizontal = rowPadH, vertical = 16.dp), size = typo.title, align = TextAlign.Start, lineHeightMul = 1.4f)
                     ProcessService.Live.id == r.id -> Small(ProcessService.phaseLabel(context, ProcessService.Live.phase, ProcessService.Live.percent), Modifier.padding(horizontal = rowPadH, vertical = 16.dp), maxLines = 3)
                     r.error.isNotBlank() -> Small(r.error, Modifier.padding(horizontal = rowPadH, vertical = 16.dp).noRippleClickable { app.store.update(r.copy(error = "")); ProcessService.kick(context) }, maxLines = 6)
-                    settings.processing == "phone" -> Small(stringResource(R.string.transcript_phone_pending), Modifier.padding(horizontal = rowPadH, vertical = 16.dp).noRippleClickable { ProcessService.kick(context) }, maxLines = 4)
-                    settings.processing == "off" -> Small(stringResource(R.string.transcript_off), Modifier.padding(horizontal = rowPadH, vertical = 16.dp).noRippleClickable { nav.push(Screen.Settings()) }, maxLines = 4)
+                    r.mode(settings.processing) == "phone" -> Small(stringResource(R.string.transcript_phone_pending), Modifier.padding(horizontal = rowPadH, vertical = 16.dp).noRippleClickable { ProcessService.kick(context) }, maxLines = 4)
+                    r.mode(settings.processing) == "off" -> Small(stringResource(R.string.transcript_off), Modifier.padding(horizontal = rowPadH, vertical = 16.dp).noRippleClickable { nav.push(Screen.Settings()) }, maxLines = 4)
                     settings.configured -> Small(stringResource(if (r.uploaded) R.string.transcript_pending else R.string.transcript_not_yet_uploaded), Modifier.padding(horizontal = rowPadH, vertical = 16.dp), maxLines = 4)
                     else -> Small(stringResource(R.string.transcript_needs_folder), Modifier.padding(horizontal = rowPadH, vertical = 16.dp).noRippleClickable { nav.push(Screen.Settings(setup = true)) }, maxLines = 5)
                 }
@@ -265,7 +273,7 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
             if (transcript.isNotBlank()) add(MenuItem(stringResource(R.string.share_transcript)) { shareText(context, transcript, r.title) })
             if (settings.configured && !r.uploaded) add(MenuItem(stringResource(R.string.upload_now)) { app.sync() })
             if (settings.configured && r.uploaded && r.error.isNotBlank()) add(MenuItem(stringResource(R.string.retry)) { app.store.update(r.copy(error = "")); app.sync() })
-            if (settings.processing == "phone" && !r.transcribed) add(MenuItem(stringResource(R.string.transcribe_now)) { app.store.update(r.copy(error = "")); ProcessService.kick(context) })
+            if (r.mode(settings.processing) == "phone" && !r.transcribed) add(MenuItem(stringResource(R.string.transcribe_now)) { app.store.update(r.copy(error = "")); ProcessService.kick(context) })
             if (ProcessService.Live.id == r.id) add(MenuItem(stringResource(R.string.stop)) { ProcessService.cancel(context) })
             add(MenuItem(stringResource(R.string.delete), secondary = if (r.uploaded) stringResource(R.string.delete_hint_server) else null) {
                 runCatching { player.stop() }; playing = false
