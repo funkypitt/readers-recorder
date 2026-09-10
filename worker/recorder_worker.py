@@ -196,7 +196,7 @@ def clean(src, workdir, args):
 
 
 def paragraphs(segments, speakers):
-    """Segments → text. New paragraph on a pause over 2 s, a change of speaker, or ~700 characters."""
+    """Segments → text. New paragraph on a change of speaker, ~700 characters, or a pause over 3 s once a paragraph has some body."""
     out, cur, cur_speaker, last_end = [], [], None, None
     for seg in segments:
         text = (seg.get("text") or "").strip()
@@ -204,7 +204,8 @@ def paragraphs(segments, speakers):
             continue
         spk = seg.get("speaker") if speakers else None
         gap = (seg["start"] - last_end) if last_end is not None else 0
-        if cur and (gap > 2.0 or spk != cur_speaker or sum(len(t) for t in cur) > 700):
+        size = sum(len(t) for t in cur)
+        if cur and (spk != cur_speaker or size > 700 or (gap > 3.0 and size > 150)):
             out.append((cur_speaker, " ".join(cur)))
             cur = []
         cur.append(text)
