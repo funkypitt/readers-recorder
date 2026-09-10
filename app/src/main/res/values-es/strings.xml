@@ -87,7 +87,7 @@
     <string name="cloud_how">cómo configurarlo, paso a paso</string>
     <string name="via_title">esta grabación la transcribirá…</string>
     <string name="via_phone">este teléfono</string>
-    <string name="via_cloud">mi ordenador, por la carpeta en la nube</string>
+    <string name="via_cloud">mi ordenador (carpeta en la nube)</string>
     <string name="via_default">la opción habitual</string>
     <string name="via_cloud_none">aún no hay carpeta en la nube — toca para configurarla</string>
     <string name="via_short_phone">en el teléfono</string>

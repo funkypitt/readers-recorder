@@ -87,7 +87,7 @@
     <string name="cloud_how">como configurar, passo a passo</string>
     <string name="via_title">esta gravação será transcrita por…</string>
     <string name="via_phone">este telemóvel</string>
-    <string name="via_cloud">o meu computador, pela pasta na nuvem</string>
+    <string name="via_cloud">o meu computador (pasta na nuvem)</string>
     <string name="via_default">a escolha habitual</string>
     <string name="via_cloud_none">ainda sem pasta na nuvem — toque para a configurar</string>
     <string name="via_short_phone">no telemóvel</string>

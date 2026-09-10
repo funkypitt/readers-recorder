@@ -87,7 +87,7 @@
     <string name="cloud_how">Einrichtung Schritt für Schritt</string>
     <string name="via_title">diese Aufnahme wird transkribiert von…</string>
     <string name="via_phone">diesem Telefon</string>
-    <string name="via_cloud">meinem Computer, über den Cloud-Ordner</string>
+    <string name="via_cloud">mein Computer (Cloud-Ordner)</string>
     <string name="via_default">die übliche Wahl</string>
     <string name="via_cloud_none">noch kein Cloud-Ordner — antippen zum Einrichten</string>
     <string name="via_short_phone">auf dem Telefon</string>

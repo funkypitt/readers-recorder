@@ -89,7 +89,7 @@
     <string name="cloud_how">how to set it up, step by step</string>
     <string name="via_title">this recording will be transcribed by…</string>
     <string name="via_phone">this phone</string>
-    <string name="via_cloud">my computer, through the cloud folder</string>
+    <string name="via_cloud">my computer (cloud folder)</string>
     <string name="via_default">the usual choice</string>
     <string name="via_cloud_none">no cloud folder yet — tap to set one up</string>
     <string name="via_short_phone">on the phone</string>

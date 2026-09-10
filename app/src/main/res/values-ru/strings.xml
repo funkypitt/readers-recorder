@@ -87,7 +87,7 @@
     <string name="cloud_how">как настроить, по шагам</string>
     <string name="via_title">эту запись расшифрует…</string>
     <string name="via_phone">этот телефон</string>
-    <string name="via_cloud">мой компьютер, через облачную папку</string>
+    <string name="via_cloud">мой компьютер (облачная папка)</string>
     <string name="via_default">обычный выбор</string>
     <string name="via_cloud_none">облачной папки ещё нет — нажмите, чтобы настроить</string>
     <string name="via_short_phone">на телефоне</string>
