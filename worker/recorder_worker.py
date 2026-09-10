@@ -238,8 +238,14 @@ def transcribe(audio, language, diarize, args):
         compute = "float16" if device == "cuda" else "int8"
         model = whisperx.load_model(args.model, device, compute_type=compute, language=language or None)
         wav = whisperx.load_audio(str(audio))
-        result = model.transcribe(wav, batch_size=16 if device == "cuda" else 4, language=language or None)
+        try:
+            result = model.transcribe(wav, batch_size=16 if device == "cuda" else 4, language=language or None)
+        except IndexError:
+            # The VAD found no speech at all (a silent recording): whisperx's pipeline trips on an empty batch.
+            return [], language or "en", False
         lang = result.get("language") or language or "en"
+        if not result.get("segments"):
+            return [], lang, False
         try:
             align_model, meta = whisperx.load_align_model(language_code=lang, device=device)
             result = whisperx.align(result["segments"], align_model, meta, wav, device, return_char_alignments=False)
@@ -290,9 +296,12 @@ def process(folder, name, names, args):
         if report and report.exists():
             folder.store(f"{base}_nettoyage.json", report)
         t0 = time.time()
-        segments, lang, speakers = transcribe(cleaned, language, kind == "conversation", args)
+        # Transcribe the ORIGINAL: Whisper was trained on noisy speech and reads it well, while a
+        # denoiser tuned for listening can strip exactly the cues it relies on (seen on a test
+        # excerpt: the cleaned file gave hallucinations, the raw one a clean transcript).
+        segments, lang, speakers = transcribe(src, language, kind == "conversation", args)
         log(f"  transcribed in {time.time() - t0:.0f} s ({lang}, {len(segments)} segments)")
-        text = paragraphs(segments, speakers)
+        text = paragraphs(segments, speakers) if segments else "(no speech detected)\n"
         folder.write_text(f"{base}.segments.json", json.dumps(
             {"language": lang, "kind": kind, "speakers": speakers,
              "segments": [{"start": round(s["start"], 2), "end": round(s["end"], 2), "text": s.get("text", "").strip(),
@@ -330,7 +339,7 @@ def main():
     ap.add_argument("--password", default=os.environ.get("RECORDER_PASSWORD"))
     ap.add_argument("--model", default=DEFAULT_MODEL, help="WhisperX model (default large-v3)")
     ap.add_argument("--language", default="", help="language hint when the phone gave none")
-    ap.add_argument("--moteur", default="auto", choices=["auto", "dfn", "mossformer2", "afftdn"], help="nettoyer.py engine")
+    ap.add_argument("--moteur", default="dfn", choices=["auto", "dfn", "mossformer2", "afftdn"], help="nettoyer.py engine")
     ap.add_argument("--no-nettoyer", action="store_true", help="ffmpeg loudnorm only")
     ap.add_argument("--cpu", action="store_true")
     ap.add_argument("--hf-token", default=None, help="Hugging Face token for speaker diarization (or HF_TOKEN)")
