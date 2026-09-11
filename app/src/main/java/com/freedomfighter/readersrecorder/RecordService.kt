@@ -78,6 +78,7 @@ class RecordService : Service() {
             stopSelf(); return
         }
         val app = application as App
+        PlayerService.stop(this)   // one sound at a time: recording silences playback
         id = UUID.randomUUID().toString()
         file = File(app.store.dir, "$id.m4a")
         startedAt = System.currentTimeMillis()

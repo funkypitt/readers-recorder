@@ -19,7 +19,7 @@ import java.time.format.DateTimeFormatter
 class App : Application() {
     // lazy: the provider and the widget can run before Application.onCreate
     val prefs: Prefs by lazy { Prefs(this) }
-    val store: Store by lazy { Store(this).also { s -> s.onChange = { RecordWidgets.refresh(this); StateProvider.notify(this) } } }
+    val store: Store by lazy { Store(this).also { s -> s.onChange = { RecordWidgets.refresh(this); com.freedomfighter.readersrecorder.widget.ListenWidgets.refresh(this); StateProvider.notify(this) } } }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val syncLock = Mutex()
     /** One line for the status row: "syncing…", "synced 21:03", or the error. */

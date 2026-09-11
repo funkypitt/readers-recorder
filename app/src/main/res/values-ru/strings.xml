@@ -95,4 +95,9 @@
     <string name="select_several">выбрать несколько…</string>
     <string name="selected_n">выбрано: %1$d</string>
     <string name="delete_selected">удалить %1$d</string>
+    <string name="widget_listen_name">Reader\'s Recorder · слушать</string>
+    <string name="widget_listen_desc">последние записи: ▶ воспроизводит, ‹ › листает</string>
+    <string name="channel_playback">воспроизведение</string>
+    <string name="notif_playing">воспроизведение</string>
+    <string name="listen_empty">пока ничего не записано</string>
 </resources>

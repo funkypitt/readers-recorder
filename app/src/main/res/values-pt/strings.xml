@@ -95,4 +95,9 @@
     <string name="select_several">selecionar várias…</string>
     <string name="selected_n">%1$d selecionadas</string>
     <string name="delete_selected">apagar %1$d</string>
+    <string name="widget_listen_name">Reader\'s Recorder · ouvir</string>
+    <string name="widget_listen_desc">as últimas gravações: ▶ reproduz, ‹ › passa de uma a outra</string>
+    <string name="channel_playback">reprodução</string>
+    <string name="notif_playing">a reproduzir</string>
+    <string name="listen_empty">nada gravado ainda</string>
 </resources>

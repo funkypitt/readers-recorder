@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="4dp"
+    android:paddingEnd="4dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+    <TextView android:id="@+id/listen_prev" android:layout_width="wrap_content" android:layout_height="match_parent" android:gravity="center" android:fontFamily="sans-serif-light" android:textSize="30sp" android:paddingStart="10dp" android:paddingEnd="10dp" android:text="‹" />
+    <LinearLayout
+        android:id="@+id/widget_body"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+        <TextView android:id="@+id/widget_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="sans-serif-light" android:textSize="20sp" android:maxLines="1" android:ellipsize="end" />
+        <TextView android:id="@+id/widget_sub" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="sans-serif-light" android:textSize="13sp" android:maxLines="1" android:ellipsize="end" />
+    </LinearLayout>
+    <Chronometer android:id="@+id/listen_timer" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="sans-serif-light" android:textSize="18sp" android:paddingStart="8dp" android:visibility="gone" />
+    <TextView android:id="@+id/listen_play" android:layout_width="wrap_content" android:layout_height="match_parent" android:gravity="center" android:fontFamily="sans-serif-light" android:textSize="24sp" android:paddingStart="14dp" android:paddingEnd="10dp" />
+    <TextView android:id="@+id/listen_next" android:layout_width="wrap_content" android:layout_height="match_parent" android:gravity="center" android:fontFamily="sans-serif-light" android:textSize="30sp" android:paddingStart="6dp" android:paddingEnd="10dp" android:text="›" />
+</LinearLayout>

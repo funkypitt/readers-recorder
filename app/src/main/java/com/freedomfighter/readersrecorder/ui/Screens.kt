@@ -53,6 +53,7 @@ import com.freedomfighter.readersrecorder.data.Recording
 import com.freedomfighter.readersrecorder.data.TextSize
 import com.freedomfighter.readersrecorder.sync.Sync
 import com.freedomfighter.readersrecorder.ProcessService
+import com.freedomfighter.readersrecorder.PlayerService
 import com.freedomfighter.readersrecorder.whisper.Models
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -123,6 +124,7 @@ fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
     BackHandler(enabled = selecting) { selecting = false; selected.clear() }
     fun deleteMany(ids: List<String>) {
         val s = settings
+        if (PlayerService.Live.id in ids) PlayerService.stop(context)
         val gone = ids.mapNotNull { app.store.get(it) }
         gone.forEach { app.store.delete(it.id) }
         scope.launch(Dispatchers.IO) { gone.forEach { runCatching { Sync.deleteRemote(it, s) } } }
@@ -267,17 +269,13 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
     val scope = rememberCoroutineScope()
     var menu by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf(false) }
-    var playing by remember { mutableStateOf(false) }
-    var position by remember { mutableIntStateOf(0) }
-    var duration by remember { mutableIntStateOf(0) }
-    val player = remember { MediaPlayer().apply { setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()) } }
+    // The shared player: what plays here also shows in the widget, the launcher tile and the notification.
+    val pl = PlayerService.Live
+    val isThis = pl.id == id
+    val playing = isThis && pl.playing
+    val position = if (isThis) pl.positionMs.toInt() else 0
+    val duration = if (isThis && pl.durationMs > 0) pl.durationMs.toInt() else (r?.durationMs ?: 0L).toInt()
     BackHandler { nav.pop() }
-    DisposableEffect(Unit) { onDispose { runCatching { player.release() } } }
-    LaunchedEffect(r?.cleaned) {
-        val rec = r ?: return@LaunchedEffect
-        runCatching { player.reset(); player.setDataSource(app.store.playable(rec).absolutePath); player.prepare(); duration = player.duration; player.setOnCompletionListener { playing = false; position = 0 } }
-    }
-    LaunchedEffect(playing) { while (playing) { position = runCatching { player.currentPosition }.getOrDefault(0); delay(250) } }
     if (r == null) { LaunchedEffect(Unit) { nav.pop() }; return }
     val transcript = remember(r.transcribed, all) { app.store.transcript(r) }
     Page {
@@ -291,7 +289,7 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
                         Small(r.whenPrefix + kindLabel(r.kind) + " · " + statusLabel(r, settings.configured) + (if (r.cleaned && app.store.cleanAudio(r).exists()) " · " + stringResource(R.string.playing_cleaned) else ""), maxLines = 2)
                     }
                     Box(Modifier.padding(start = 16.dp).background(if (playing) colors.fg else Color.Transparent).noRippleClickable {
-                        if (playing) { player.pause(); playing = false } else { runCatching { player.start() }; playing = true }
+                        PlayerService.toggle(context, r.id)
                     }.padding(horizontal = 18.dp, vertical = 10.dp)) {
                         T(if (playing) "❚❚" else "▶", size = typo.tile * 0.9f, color = if (playing) colors.bg else colors.fg, align = TextAlign.Center)
                     }
@@ -299,8 +297,8 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
                 Box(Modifier.padding(horizontal = rowPadH).fillMaxWidth().height(24.dp).noRippleClickable { }, contentAlignment = Alignment.Center) {
                     var width by remember { mutableIntStateOf(1) }
                     Progress(if (duration > 0) position.toFloat() / duration else 0f, Modifier.onSizeChanged { width = it.width }
-                        .pointerInput(duration) {
-                            detectTapGestures { o: Offset -> if (duration > 0) { val p = (o.x / width * duration).toInt(); runCatching { player.seekTo(p) }; position = p } }
+                        .pointerInput(duration, isThis) {
+                            detectTapGestures { o: Offset -> if (duration > 0) { val p = (o.x / width * duration).toInt(); if (isThis) PlayerService.seek(context, p) else PlayerService.play(context, r.id, p) } }
                         })
                 }
                 Rule(Modifier.padding(top = 10.dp))
@@ -326,7 +324,7 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
             if (r.mode(settings.processing) == "phone" && !r.transcribed) add(MenuItem(stringResource(R.string.transcribe_now)) { app.store.update(r.copy(error = "")); ProcessService.kick(context) })
             if (ProcessService.Live.id == r.id) add(MenuItem(stringResource(R.string.stop)) { ProcessService.cancel(context) })
             add(MenuItem(stringResource(R.string.delete), secondary = if (r.uploaded) stringResource(R.string.delete_hint_server) else null) {
-                runCatching { player.stop() }; playing = false
+                if (isThis) PlayerService.stop(context)
                 val s = settings
                 scope.launch(Dispatchers.IO) { Sync.deleteRemote(r, s) }
                 app.store.delete(r.id); nav.pop()

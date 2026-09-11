@@ -47,9 +47,14 @@ much bigger model.
   arm64 builds, one with fp16 arithmetic chosen at runtime), writes the transcript and the
   timed segments, then makes the normalised AAC copy. A recording transcribed on the phone is
   uploaded with its `.txt`, so the workstation worker leaves it alone.
-* **Widget** for any launcher: "● record" with the latest recording under it; while
-  recording, a live Chronometer and ■. **Reader's Launcher tile** ("recorder"): the same, and
-  its text opens the latest recording so the transcript is one tap away.
+* **Widgets** for any launcher: "● record" with the latest recording under it (while
+  recording, a live Chronometer and ■); and **listen**: one recording at a time, newest
+  first, ▶ / ❚❚ plays and pauses, ‹ › step to the more recent and the older ones (a standard
+  widget cannot be swiped), the title opens it. **Reader's Launcher tiles**: "recorder" (the
+  same record button) and "recordings" (listen, swiping from the latest to the older ones).
+* One player for the whole app (`PlayerService`, foreground mediaPlayback, audio focus,
+  pauses when headphones are pulled out): what plays from the widget or the launcher tile also
+  shows on the recording's page and in the notification. Starting a recording stops playback.
 * English, French, German, Spanish, Portuguese, Russian.
 
 ## The workstation: `worker/recorder_worker.py`
