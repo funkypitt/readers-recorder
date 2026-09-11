@@ -12,8 +12,8 @@ android {
         applicationId = "com.freedomfighter.readersrecorder"
         minSdk = 26
         targetSdk = 34
-        versionCode = 10
-        versionName = "1.5.1"
+        versionCode = 11
+        versionName = "1.5.2"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         externalNativeBuild { cmake { arguments += listOf("-DGGML_NATIVE=OFF", "-DANDROID_STL=c++_static") } }
     }
