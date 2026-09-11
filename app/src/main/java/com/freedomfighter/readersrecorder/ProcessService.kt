@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
@@ -17,7 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.freedomfighter.readersrecorder.audio.Decode
+import com.freedomfighter.readersrecorder.audio.Decode16k
 import com.freedomfighter.readersrecorder.audio.Normalize
 import com.freedomfighter.readersrecorder.audio.Pcm
 import com.freedomfighter.readersrecorder.audio.Resample
@@ -27,6 +28,7 @@ import com.freedomfighter.readersrecorder.whisper.Paragraphs
 import com.freedomfighter.readersrecorder.whisper.Prompts
 import com.freedomfighter.readersrecorder.whisper.Segment
 import com.freedomfighter.readersrecorder.whisper.WhisperLib
+import com.freedomfighter.readersrecorder.whisper.WhisperSession
 import com.freedomfighter.readersrecorder.whisper.transcribe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -88,32 +90,44 @@ class ProcessService : Service() {
 
     private fun processOne(app: App, r: Recording, language: String, modelKey: String) {
         val store = app.store
-        val src = store.audio(r)
+        val src = Uri.fromFile(store.audio(r))
+        val lang = language.ifBlank { null }
+        val totalMs = r.durationMs.coerceAtLeast(1)
         // 1. the model, fetched once
         val model = Models.byKey(modelKey)
         if (!Models.isDownloaded(this, model)) {
             Live.phase = "model"; Models.download(this, model) { Live.percent = it }
             if (cancelled.get()) return
         }
-        // 2. decode once, at the recording's own rate
-        Live.phase = "decode"; Live.percent = 0
-        val pcm = Decode.toPcm(src) { Live.percent = (it * 100).toInt() }
-        if (cancelled.get()) return
-        // 3. whisper wants 16 kHz; transcribe the original, not the cleaned copy
+        // 2. transcribe the original in five-minute pieces, the model loaded once: memory stays
+        //    flat whatever the length. Each piece gets the style sentence and the end of the one before.
         Live.phase = "transcribe"; Live.percent = 0
-        val pcm16 = Resample.to(Pcm(pcm.samples.copyOf(), pcm.rate), 16_000)
-        val poll = scope.launch { while (isActive) { Live.percent = WhisperLib.progress(); delay(500) } }
-        val result = try { transcribe(Models.file(this, model), pcm16.samples, language.ifBlank { null }, Prompts.style(language.ifBlank { null })) } finally { poll.cancel() }
-        if (result == null || cancelled.get()) return
-        val (segments, lang) = result
+        val segments = ArrayList<Segment>()
+        var detected = ""
+        var aborted = false
+        WhisperSession(Models.file(this, model)).use { session ->
+            Decode16k.chunks(this, src, CHUNK_SECONDS) { pcm, startMs ->
+                if (cancelled.get()) { aborted = true; return@chunks false }
+                val chunkMs = pcm.size / 16L
+                val prompt = if (segments.isEmpty()) Prompts.style(lang) else Prompts.forPiece(lang, segments.takeLast(12).joinToString(" ") { it.text })
+                val segs = session.run(pcm, lang, prompt) { p ->
+                    Live.percent = (((startMs + chunkMs * p / 100.0) / totalMs) * 100).toInt().coerceIn(0, 99)
+                }
+                if (segs == null) { aborted = true; return@chunks false }
+                if (detected.isEmpty()) detected = session.language()
+                segs.forEach { segments += it.copy(startMs = it.startMs + startMs, endMs = it.endMs + startMs) }
+                true
+            }
+        }
+        if (aborted || cancelled.get()) return
         store.setTranscript(r, Paragraphs.build(segments, getString(R.string.no_speech)))
-        store.writeSegments(r, segments, lang)
-        // 4. the listening copy: high-pass, loudness, AAC
-        Live.phase = "clean"; Live.percent = 0
+        store.writeSegments(r, segments, lang ?: detected)
+        // 3. the listening copy, streamed in two passes: high-pass, loudness, AAC
         if (app.prefs.settings.value.cleanOnPhone) {
-            Normalize.process(pcm)
-            Normalize.encodeAac(pcm, store.cleanTarget(r, "m4a")) { Live.percent = (it * 100).toInt() }
-            store.update(r.id) { it.copy(cleaned = true) }
+            Live.phase = "clean"; Live.percent = 0
+            if (Normalize.cleanCopy(this, src, store.cleanTarget(r, "m4a"), totalMs, { Live.percent = it }, { cancelled.get() })) {
+                store.update(r.id) { it.copy(cleaned = true) }
+            }
         }
     }
 
@@ -161,6 +175,7 @@ class ProcessService : Service() {
 
     companion object {
         const val ACTION_CANCEL = "com.freedomfighter.readersrecorder.PROCESS_CANCEL"
+        private const val CHUNK_SECONDS = 300
         private const val CHANNEL_ID = "processing"
         private const val NOTIF_ID = 2
 

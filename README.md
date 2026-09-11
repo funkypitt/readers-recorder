@@ -43,12 +43,15 @@ much bigger model.
   quality, much slower (large-v3-turbo, 574 MB) —, the cleaned copy, the cloud folder (or "forget it — recordings stay
   here"), the language spoken (the phone's language, English, or detected), the default kind,
   the look.
-* On the phone, `ProcessService` (a foreground service with a progress notification) decodes
-  the recording with MediaCodec, resamples to 16 kHz, runs whisper.cpp on the big cores (two
-  arm64 builds, one with fp16 arithmetic chosen at runtime), primed with a short,
-  well-punctuated sentence in the language spoken so it writes full sentences, commas and
-  capitals, writes the transcript and the
-  timed segments, then makes the normalised AAC copy. A recording transcribed on the phone is
+* On the phone, `ProcessService` (a foreground service with a progress notification) works in
+  pieces, so memory stays flat whatever the length of the recording. MediaCodec decodes the
+  file five minutes at a time, each piece resampled to 16 kHz and handed to whisper.cpp, whose
+  model is loaded once for the whole recording (two arm64 builds, one with fp16 arithmetic
+  chosen at runtime). Each piece is primed with a short, well-punctuated sentence in the
+  language spoken and the end of the previous piece, so the text keeps full sentences, commas
+  and capitals across pieces. The listening copy is streamed too, in two passes a minute at a
+  time: the first measures the loudness of the high-passed signal, the second applies the same
+  high-pass and a constant gain to −19 LUFS and encodes AAC. A recording transcribed on the phone is
   uploaded with its `.txt`, so the workstation worker leaves it alone.
 * **Widgets** for any launcher: "● record" with the latest recording under it (while
   recording, a live Chronometer and ■); and **listen**: one recording at a time, newest

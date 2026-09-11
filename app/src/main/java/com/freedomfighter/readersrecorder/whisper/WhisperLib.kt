@@ -47,3 +47,32 @@ fun transcribe(model: File, pcm16k: FloatArray, language: String?, prompt: Strin
         return segs to WhisperLib.detectedLanguage(ptr)
     } finally { WhisperLib.freeContext(ptr) }
 }
+
+
+/** A model loaded once and used for every piece of a long recording. One piece at a time. */
+class WhisperSession(model: File) : AutoCloseable {
+    private val ptr = WhisperLib.initContext(model.absolutePath).also { require(it != 0L) { "cannot load ${model.name}" } }
+
+    /** Segments with times inside the piece; null when cancelled. [onProgress] gets 0–100 while it runs. */
+    fun run(pcm16k: FloatArray, language: String?, prompt: String?, onProgress: (Int) -> Unit): List<Segment>? {
+        val done = java.util.concurrent.atomic.AtomicBoolean(false)
+        val poll = Thread {
+            while (!done.get()) {
+                onProgress(WhisperLib.progress())
+                try { Thread.sleep(500) } catch (_: InterruptedException) { break }
+            }
+        }.apply { isDaemon = true; start() }
+        try {
+            val rc = WhisperLib.fullTranscribe(ptr, preferredThreads(), language, prompt, pcm16k)
+            if (rc == 1) return null
+            require(rc == 0) { "whisper failed" }
+            val n = WhisperLib.segmentCount(ptr)
+            return (0 until n).map { Segment(WhisperLib.segmentT0(ptr, it) * 10, WhisperLib.segmentT1(ptr, it) * 10, WhisperLib.segmentText(ptr, it).trim()) }
+        } finally { done.set(true); poll.interrupt() }
+    }
+
+    /** The language whisper found in the last piece (useful when it was left to detection). */
+    fun language(): String = WhisperLib.detectedLanguage(ptr)
+
+    override fun close() = WhisperLib.freeContext(ptr)
+}

@@ -4,6 +4,9 @@ import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import java.io.File
+import android.content.Context
+import android.media.AudioFormat
+import android.net.Uri
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.PI
@@ -111,4 +114,85 @@ object Resample {
         if (g != 0.0 && kotlin.math.abs(g - 1.0) > 1e-3) for (i in out.indices) out[i] = (out[i] / g).toFloat()
         return Pcm(out, rate)
     }
+}
+
+
+/**
+ * Decode any audio file MediaCodec reads, mono, at its own rate, handed over in pieces of
+ * about [seconds] with where each starts (ms). Memory stays flat whatever the length: a
+ * two-hour lecture never sits in memory whole. Stops as soon as [onChunk] returns false.
+ */
+object Decoder {
+    fun chunks(ctx: Context, uri: Uri, seconds: Int, onChunk: (FloatArray, Int, Long) -> Boolean) {
+        val ex = MediaExtractor()
+        ex.setDataSource(ctx, uri, null)
+        val track = (0 until ex.trackCount).firstOrNull { ex.getTrackFormat(it).getString(MediaFormat.KEY_MIME)?.startsWith("audio/") == true }
+        if (track == null) { ex.release(); error("no audio track") }
+        ex.selectTrack(track)
+        val fmt = ex.getTrackFormat(track)
+        val codec = MediaCodec.createDecoderByType(fmt.getString(MediaFormat.KEY_MIME)!!)
+        codec.configure(fmt, null, null, 0)
+        codec.start()
+        var rate = fmt.getInteger(MediaFormat.KEY_SAMPLE_RATE)
+        var channels = fmt.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+        var encoding = if (fmt.containsKey(MediaFormat.KEY_PCM_ENCODING)) fmt.getInteger(MediaFormat.KEY_PCM_ENCODING) else AudioFormat.ENCODING_PCM_16BIT
+        var acc = FloatList()
+        var startMs = 0L
+        var keepGoing = true
+        fun flush() {
+            if (acc.size == 0 || !keepGoing) return
+            val ms = acc.size * 1000L / rate
+            val out = acc.toArray()
+            acc = FloatList()
+            keepGoing = onChunk(out, rate, startMs)
+            startMs += ms
+        }
+        try {
+            val info = MediaCodec.BufferInfo()
+            var inputDone = false
+            var outputDone = false
+            while (!outputDone && keepGoing) {
+                if (!inputDone) {
+                    val i = codec.dequeueInputBuffer(10_000)
+                    if (i >= 0) {
+                        val buf = codec.getInputBuffer(i)!!
+                        val n = ex.readSampleData(buf, 0)
+                        if (n < 0) { codec.queueInputBuffer(i, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM); inputDone = true }
+                        else { codec.queueInputBuffer(i, 0, n, ex.sampleTime, 0); ex.advance() }
+                    }
+                }
+                val o = codec.dequeueOutputBuffer(info, 10_000)
+                if (o == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                    val f = codec.outputFormat
+                    rate = f.getInteger(MediaFormat.KEY_SAMPLE_RATE); channels = f.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+                    if (f.containsKey(MediaFormat.KEY_PCM_ENCODING)) encoding = f.getInteger(MediaFormat.KEY_PCM_ENCODING)
+                } else if (o >= 0) {
+                    val buf = codec.getOutputBuffer(o)!!
+                    buf.position(info.offset); buf.limit(info.offset + info.size)
+                    buf.order(ByteOrder.nativeOrder())
+                    if (encoding == AudioFormat.ENCODING_PCM_FLOAT) {
+                        val fb = buf.asFloatBuffer(); val n = fb.remaining() / channels
+                        for (k in 0 until n) { var v = 0f; for (c in 0 until channels) v += fb.get(); acc.add(v / channels) }
+                    } else {
+                        val sb = buf.asShortBuffer(); val n = sb.remaining() / channels
+                        for (k in 0 until n) { var v = 0f; for (c in 0 until channels) v += sb.get() / 32768f; acc.add(v / channels) }
+                    }
+                    codec.releaseOutputBuffer(o, false)
+                    if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) outputDone = true
+                    if (acc.size >= seconds * rate) flush()
+                }
+            }
+            flush()
+        } finally {
+            runCatching { codec.stop() }
+            codec.release()
+            ex.release()
+        }
+    }
+}
+
+/** The same pieces, resampled to the 16 kHz Whisper wants. */
+object Decode16k {
+    fun chunks(ctx: Context, uri: Uri, seconds: Int, onChunk: (FloatArray, Long) -> Boolean) =
+        Decoder.chunks(ctx, uri, seconds) { x, rate, startMs -> onChunk(Resample.to(Pcm(x, rate), 16_000).samples, startMs) }
 }
