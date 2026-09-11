@@ -100,4 +100,7 @@
     <string name="channel_playback">reproducción</string>
     <string name="notif_playing">reproduciendo</string>
     <string name="listen_empty">nada grabado todavía</string>
+    <string name="quality">calidad de transcripción</string>
+    <string name="quality_normal">calidad normal</string>
+    <string name="quality_high">alta calidad (mucho más lento)</string>
 </resources>

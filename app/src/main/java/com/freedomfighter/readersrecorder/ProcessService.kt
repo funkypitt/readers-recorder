@@ -23,6 +23,8 @@ import com.freedomfighter.readersrecorder.audio.Pcm
 import com.freedomfighter.readersrecorder.audio.Resample
 import com.freedomfighter.readersrecorder.data.Recording
 import com.freedomfighter.readersrecorder.whisper.Models
+import com.freedomfighter.readersrecorder.whisper.Paragraphs
+import com.freedomfighter.readersrecorder.whisper.Prompts
 import com.freedomfighter.readersrecorder.whisper.Segment
 import com.freedomfighter.readersrecorder.whisper.WhisperLib
 import com.freedomfighter.readersrecorder.whisper.transcribe
@@ -101,10 +103,10 @@ class ProcessService : Service() {
         Live.phase = "transcribe"; Live.percent = 0
         val pcm16 = Resample.to(Pcm(pcm.samples.copyOf(), pcm.rate), 16_000)
         val poll = scope.launch { while (isActive) { Live.percent = WhisperLib.progress(); delay(500) } }
-        val result = try { transcribe(Models.file(this, model), pcm16.samples, language.ifBlank { null }) } finally { poll.cancel() }
+        val result = try { transcribe(Models.file(this, model), pcm16.samples, language.ifBlank { null }, Prompts.style(language.ifBlank { null })) } finally { poll.cancel() }
         if (result == null || cancelled.get()) return
         val (segments, lang) = result
-        store.setTranscript(r, paragraphs(segments))
+        store.setTranscript(r, Paragraphs.build(segments, getString(R.string.no_speech)))
         store.writeSegments(r, segments, lang)
         // 4. the listening copy: high-pass, loudness, AAC
         Live.phase = "clean"; Live.percent = 0
@@ -115,19 +117,6 @@ class ProcessService : Service() {
         }
     }
 
-    /** Segments → paragraphs: a new one on a pause over 3 s once there is some body, or past ~700 characters. */
-    private fun paragraphs(segments: List<Segment>): String {
-        val out = ArrayList<String>(); val cur = StringBuilder(); var lastEnd = -1L
-        for (s in segments) {
-            if (s.text.isBlank()) continue
-            val gap = if (lastEnd < 0) 0 else s.startMs - lastEnd
-            if (cur.isNotEmpty() && (cur.length > 700 || (gap > 3000 && cur.length > 150))) { out.add(cur.toString().trim()); cur.setLength(0) }
-            if (cur.isNotEmpty()) cur.append(' ')
-            cur.append(s.text.trim()); lastEnd = s.endMs
-        }
-        if (cur.isNotEmpty()) out.add(cur.toString().trim())
-        return if (out.isEmpty()) getString(R.string.no_speech) + "\n" else out.joinToString("\n\n") + "\n"
-    }
 
     private fun finish() {
         running = false

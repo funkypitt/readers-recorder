@@ -395,8 +395,9 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
                 if (s.processing == "phone") {
                     val m = Models.byKey(s.model)
                     val downloading by Models.downloading.collectAsState()
-                    TextRow(m.label + " · " + m.mb + " MB" + (if (Models.isDownloaded(context, m)) "" else if (downloading >= 0) " · $downloading%" else " · " + stringResource(R.string.model_not_yet)), secondary = stringResource(R.string.model)) {
-                        app.prefs.setModel(Models.ALL[(Models.ALL.indexOfFirst { it.key == s.model }.coerceAtLeast(0) + 1) % Models.ALL.size].key)
+                    val state = when { Models.isDownloaded(context, m) -> ""; downloading >= 0 -> " · $downloading%"; else -> " · " + stringResource(R.string.model_not_yet) }
+                    TextRow(stringResource(if (m == Models.HIGH) R.string.quality_high else R.string.quality_normal), secondary = stringResource(R.string.quality) + " · " + m.mb + " MB" + state) {
+                        app.prefs.setModel(if (m == Models.HIGH) Models.NORMAL.key else Models.HIGH.key)
                     }
                     TextRow(if (s.cleanOnPhone) stringResource(R.string.on) else stringResource(R.string.off), secondary = stringResource(R.string.clean_on_phone)) { app.prefs.setCleanOnPhone(!s.cleanOnPhone) }
                 }

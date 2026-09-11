@@ -30,6 +30,7 @@ import base64
 import fcntl
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -205,7 +206,9 @@ def clean(src, workdir, args):
 
 
 def paragraphs(segments, speakers):
-    """Segments → text. New paragraph on a change of speaker, ~700 characters, or a pause over 3 s once a paragraph has some body."""
+    """Segments → text, with the phone's rule. A break only where a sentence has ended: after a
+    pause of 1.2 s once the paragraph has some body, or as soon as it passes ~600 characters;
+    a runaway sentence is cut at ~1,200 characters; a change of speaker always starts a new one."""
     out, cur, cur_speaker, last_end = [], [], None, None
     for seg in segments:
         text = (seg.get("text") or "").strip()
@@ -213,8 +216,10 @@ def paragraphs(segments, speakers):
             continue
         spk = seg.get("speaker") if speakers else None
         gap = (seg["start"] - last_end) if last_end is not None else 0
-        size = sum(len(t) for t in cur)
-        if cur and (spk != cur_speaker or size > 700 or (gap > 3.0 and size > 150)):
+        body = " ".join(cur)
+        ended = bool(re.search(r"[.!?…][\"'»”’)]*\s*$", body))
+        if cur and (spk != cur_speaker or (ended and gap >= 1.2 and len(body) >= 250)
+                    or (ended and len(body) >= 600) or len(body) >= 1200):
             out.append((cur_speaker, " ".join(cur)))
             cur = []
         cur.append(text)

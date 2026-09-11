@@ -12,7 +12,7 @@ object WhisperLib {
     }
     @JvmStatic external fun initContext(modelPath: String): Long
     @JvmStatic external fun freeContext(ptr: Long)
-    @JvmStatic external fun fullTranscribe(ptr: Long, threads: Int, language: String?, audio: FloatArray): Int
+    @JvmStatic external fun fullTranscribe(ptr: Long, threads: Int, language: String?, prompt: String?, audio: FloatArray): Int
     @JvmStatic external fun cancel()
     @JvmStatic external fun progress(): Int
     @JvmStatic external fun segmentCount(ptr: Long): Int
@@ -35,11 +35,11 @@ fun preferredThreads(): Int = runCatching {
 }.getOrDefault((Runtime.getRuntime().availableProcessors() - 2).coerceAtLeast(2))
 
 /** Run whisper over 16 kHz mono PCM; null when cancelled. */
-fun transcribe(model: File, pcm16k: FloatArray, language: String?): Pair<List<Segment>, String>? {
+fun transcribe(model: File, pcm16k: FloatArray, language: String?, prompt: String? = null): Pair<List<Segment>, String>? {
     val ptr = WhisperLib.initContext(model.absolutePath)
     require(ptr != 0L) { "cannot load ${model.name}" }
     try {
-        val rc = WhisperLib.fullTranscribe(ptr, preferredThreads(), language, pcm16k)
+        val rc = WhisperLib.fullTranscribe(ptr, preferredThreads(), language, prompt, pcm16k)
         if (rc == 1) return null
         require(rc == 0) { "whisper failed" }
         val n = WhisperLib.segmentCount(ptr)

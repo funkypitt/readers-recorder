@@ -30,7 +30,7 @@ data class Settings(
     /** Who transcribes: "phone" (whisper.cpp here, the default), "cloud" (the worker behind the WebDAV folder), "off". */
     val processing: String = "phone",
     /** whisper.cpp model on the phone: base, small, medium. */
-    val model: String = "small",
+    val model: String = "normal",
     /** Also make the normalised listening copy on the phone. */
     val cleanOnPhone: Boolean = true
 ) {
@@ -61,7 +61,7 @@ class Prefs(context: Context) {
         kind = sp.getString("kind", "memo") ?: "memo",
         fetchCleaned = sp.getBoolean("fetch_cleaned", true),
         processing = sp.getString("processing", "phone") ?: "phone",
-        model = sp.getString("model", "small") ?: "small",
+        model = sp.getString("model", "normal") ?: "normal",
         cleanOnPhone = sp.getBoolean("clean_on_phone", true)
     )
     private inline fun <reified E : Enum<E>> enumOr(name: String?, default: E): E =

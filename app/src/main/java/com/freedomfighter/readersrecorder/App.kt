@@ -26,7 +26,10 @@ class App : Application() {
     val status = MutableStateFlow("")
     val syncing = MutableStateFlow(false)
 
-    override fun onCreate() { super.onCreate(); prefs; store }
+    override fun onCreate() {
+        super.onCreate(); prefs; store
+        Thread { runCatching { com.freedomfighter.readersrecorder.whisper.Models.cleanup(this) } }.start()
+    }
 
     /** Upload what is new, fetch transcripts and cleaned audio that have appeared. */
     fun sync() {

@@ -39,12 +39,15 @@ much bigger model.
   will transcribe it: this phone, or my computer through the cloud folder — handy to compare
   the two on the same kind of material. The choice is shown in the recording's status line.
 * Settings: who transcribes (this phone · my computer through the cloud folder · nobody), the
-  model on the phone, the cleaned copy, the cloud folder (or "forget it — recordings stay
+  transcription quality on the phone — normal (Whisper small, 190 MB, the default) or high
+  quality, much slower (large-v3-turbo, 574 MB) —, the cleaned copy, the cloud folder (or "forget it — recordings stay
   here"), the language spoken (the phone's language, English, or detected), the default kind,
   the look.
 * On the phone, `ProcessService` (a foreground service with a progress notification) decodes
   the recording with MediaCodec, resamples to 16 kHz, runs whisper.cpp on the big cores (two
-  arm64 builds, one with fp16 arithmetic chosen at runtime), writes the transcript and the
+  arm64 builds, one with fp16 arithmetic chosen at runtime), primed with a short,
+  well-punctuated sentence in the language spoken so it writes full sentences, commas and
+  capitals, writes the transcript and the
   timed segments, then makes the normalised AAC copy. A recording transcribed on the phone is
   uploaded with its `.txt`, so the workstation worker leaves it alone.
 * **Widgets** for any launcher: "● record" with the latest recording under it (while
@@ -68,7 +71,8 @@ the WebDAV folder directly — and for every `<base>.m4a` the phone has dropped:
    `<base>_nettoye.mp3` (+ `<base>_nettoyage.json`, the report);
 2. **transcribes** the cleaned audio with WhisperX (large-v3 by default, GPU, shared toolkit
    lock, resident Ollama models purged first), aligned; speaker diarization for a
-   conversation when `HF_TOKEN` is set → `<base>.txt` (paragraphs) and `<base>.segments.json`.
+   conversation when `HF_TOKEN` is set → `<base>.txt` (paragraphs broken only where a sentence has ended, after a pause or past ~600 characters —
+the same rule as on the phone) and `<base>.segments.json`.
 
 `<base>.txt` is the "done" mark; `<base>.busy` guards work in progress; `<base>.error.txt`
 carries a failure (the phone shows its first line; `--retry-errors` retries).

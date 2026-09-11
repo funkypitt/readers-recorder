@@ -59,3 +59,7 @@
 12651	12679	1789040915155476951	/home/freedomfighter/code/readers-recorder/app/build/intermediates/cxx/Debug/613t3z3f/obj/arm64-v8a/libwhisper_v8fp16_va.so	9554015a90143ab4
 3322	13898	1789040916347525480	CMakeFiles/whisper.dir/whisper.cpp/src/whisper.cpp.o	d4a59e1626c44417
 13899	13931	1789040916404527801	/home/freedomfighter/code/readers-recorder/app/build/intermediates/cxx/Debug/613t3z3f/obj/arm64-v8a/libwhisper.so	bddc06c05e044707
+4	50	1789119397841127259	CMakeFiles/whisper.dir/jni.c.o	ee5cf3f9372aee61
+4	51	1789119397842127300	CMakeFiles/whisper_v8fp16_va.dir/jni.c.o	f60b65d966ae5db8
+50	111	1789119397896129505	/home/freedomfighter/code/readers-recorder/app/build/intermediates/cxx/Debug/613t3z3f/obj/arm64-v8a/libwhisper.so	bddc06c05e044707
+51	111	1789119397896129505	/home/freedomfighter/code/readers-recorder/app/build/intermediates/cxx/Debug/613t3z3f/obj/arm64-v8a/libwhisper_v8fp16_va.so	9554015a90143ab4

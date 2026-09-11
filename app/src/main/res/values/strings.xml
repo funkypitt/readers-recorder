@@ -102,4 +102,7 @@
     <string name="channel_playback">playback</string>
     <string name="notif_playing">playing</string>
     <string name="listen_empty">nothing recorded yet</string>
+    <string name="quality">transcription quality</string>
+    <string name="quality_normal">normal quality</string>
+    <string name="quality_high">high quality (much slower)</string>
 </resources>

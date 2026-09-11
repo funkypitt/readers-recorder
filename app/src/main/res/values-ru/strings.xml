@@ -100,4 +100,7 @@
     <string name="channel_playback">воспроизведение</string>
     <string name="notif_playing">воспроизведение</string>
     <string name="listen_empty">пока ничего не записано</string>
+    <string name="quality">качество расшифровки</string>
+    <string name="quality_normal">обычное качество</string>
+    <string name="quality_high">высокое качество (намного медленнее)</string>
 </resources>

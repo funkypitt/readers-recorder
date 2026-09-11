@@ -61,3 +61,5 @@
 523	6957	1789040924266847881	CMakeFiles/whisper.dir/whisper.cpp/ggml/src/ggml-cpu/ops.cpp.o	659cdd58c3b1e10
 553	10789	1789040928081003158	CMakeFiles/whisper.dir/whisper.cpp/src/whisper.cpp.o	91b945c87d0e484a
 10789	10823	1789040928142005641	/home/freedomfighter/code/readers-recorder/app/build/intermediates/cxx/Debug/613t3z3f/obj/x86_64/libwhisper.so	59b1811332ffd0fe
+2	31	1789119397982133017	CMakeFiles/whisper.dir/jni.c.o	e37d0334a63bfb63
+31	91	1789119398036135223	/home/freedomfighter/code/readers-recorder/app/build/intermediates/cxx/Debug/613t3z3f/obj/x86_64/libwhisper.so	59b1811332ffd0fe

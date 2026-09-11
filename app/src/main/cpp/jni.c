@@ -43,13 +43,14 @@ Java_com_freedomfighter_readersrecorder_whisper_WhisperLib_freeContext(JNIEnv *e
 
 /** Returns 0 on success, -1 on failure, 1 when cancelled. */
 JNIEXPORT jint JNICALL
-Java_com_freedomfighter_readersrecorder_whisper_WhisperLib_fullTranscribe(JNIEnv *env, jclass cls, jlong ptr, jint threads, jstring language, jfloatArray audio) {
+Java_com_freedomfighter_readersrecorder_whisper_WhisperLib_fullTranscribe(JNIEnv *env, jclass cls, jlong ptr, jint threads, jstring language, jstring prompt, jfloatArray audio) {
     (void) cls;
     struct whisper_context *ctx = (struct whisper_context *) ptr;
     if (!ctx) return -1;
     jfloat *data = (*env)->GetFloatArrayElements(env, audio, NULL);
     const jsize n = (*env)->GetArrayLength(env, audio);
     const char *lang = language ? (*env)->GetStringUTFChars(env, language, NULL) : NULL;
+    const char *hint = prompt ? (*env)->GetStringUTFChars(env, prompt, NULL) : NULL;
 
     struct whisper_full_params params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
     params.print_realtime = false;
@@ -66,12 +67,15 @@ Java_com_freedomfighter_readersrecorder_whisper_WhisperLib_fullTranscribe(JNIEnv
     params.suppress_nst = true;
     params.progress_callback = on_progress;
     params.abort_callback = on_abort;
+    // A well-punctuated prompt: Whisper imitates its style (sentences, commas, capitals).
+    if (hint && hint[0]) params.initial_prompt = hint;
 
     atomic_store(&g_progress, 0);
     atomic_store(&g_abort, false);
     int rc = whisper_full(ctx, params, data, n);
     (*env)->ReleaseFloatArrayElements(env, audio, data, JNI_ABORT);
     if (lang) (*env)->ReleaseStringUTFChars(env, language, lang);
+    if (hint) (*env)->ReleaseStringUTFChars(env, prompt, hint);
     if (atomic_load(&g_abort)) return 1;
     return rc == 0 ? 0 : -1;
 }
