@@ -44,6 +44,8 @@ from urllib.parse import quote, unquote, urljoin
 TOOLKIT = Path(os.environ.get("TRADUCTION_DIR", "~/code/traduction")).expanduser()
 AUDIO_EXTS = {".m4a", ".mp3", ".wav", ".ogg", ".opus", ".flac", ".aac"}
 DEFAULT_MODEL = "large-v3"
+DEFAULT_RESUME_MODEL = "gemma4:31b"
+OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434").rstrip("/")
 
 # ── GPU sharing with the rest of the toolkit (same lock file, same purge) ─────
 _GPU_LOCK_PATH = os.path.expanduser("~/.cache/traduction_gpu.lock")
@@ -295,6 +297,94 @@ def transcribe(audio, language, diarize, args):
             release_gpu_lock()
 
 
+# ── summary of the transcript, by a local model through Ollama ────────────────
+KIND_WORDS = {"fr": {"memo": "un mémo", "lecture": "une conférence", "conversation": "une conversation"},
+              "en": {"memo": "a memo", "lecture": "a talk", "conversation": "a conversation"}}
+
+RESUME_ONE = {
+    "fr": ("Voici la transcription automatique de {kind}. Écris en français, sans préambule :\n"
+           "d'abord un résumé de trois à cinq phrases, puis une ligne vide, puis les points\n"
+           "principaux, un par ligne, chacun commençant par « - ».\n"
+           "N'écris que ce qui est dit dans la transcription : n'invente aucun fait, aucun chiffre,\n"
+           "aucun nom. La transcription peut contenir des erreurs de reconnaissance : ignore-les.\n\n"
+           "TRANSCRIPTION :\n{text}"),
+    "en": ("Here is the automatic transcript of {kind}. Write in English, with no preamble:\n"
+           "first a three to five sentence summary, then a blank line, then the main points,\n"
+           "one per line, each starting with \"- \".\n"
+           "Write only what the transcript says: invent no fact, no figure, no name. The\n"
+           "transcript may contain recognition errors: ignore them.\n\n"
+           "TRANSCRIPT:\n{text}"),
+}
+RESUME_PIECE = {
+    "fr": ("Voici la partie {i} sur {n} de la transcription de {kind}. Résume-la en français,\n"
+           "en cinq à dix lignes, sans préambule, sans rien inventer.\n\nTRANSCRIPTION :\n{text}"),
+    "en": ("Here is part {i} of {n} of the transcript of {kind}. Summarise it in English,\n"
+           "in five to ten lines, no preamble, inventing nothing.\n\nTRANSCRIPT:\n{text}"),
+}
+RESUME_MERGE = {
+    "fr": ("Voici les résumés successifs des {n} parties de {kind}. Fonds-les en français, sans\n"
+           "préambule : d'abord un résumé de trois à cinq phrases de l'ensemble, puis une ligne\n"
+           "vide, puis les points principaux, un par ligne, chacun commençant par « - ».\n"
+           "N'ajoute rien qui ne soit dans ces résumés.\n\nRÉSUMÉS :\n{text}"),
+    "en": ("Here are the successive summaries of the {n} parts of {kind}. Merge them in English,\n"
+           "with no preamble: first a three to five sentence summary of the whole, then a blank\n"
+           "line, then the main points, one per line, each starting with \"- \".\n"
+           "Add nothing that is not in these summaries.\n\nSUMMARIES:\n{text}"),
+}
+
+
+def ollama(prompt, model, timeout=1800):
+    """One non-streaming completion from the local Ollama server."""
+    req = urllib.request.Request(
+        f"{OLLAMA_URL}/api/generate",
+        data=json.dumps({"model": model, "prompt": prompt, "stream": False,
+                         "options": {"temperature": 0.2, "num_ctx": 8192}}).encode("utf-8"),
+        headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.loads(r.read().decode("utf-8")).get("response", "").strip()
+
+
+def pieces_of(text, max_words):
+    """Whole paragraphs, grouped into pieces of at most max_words words."""
+    out, cur, n = [], [], 0
+    for para in [p for p in text.split("\n\n") if p.strip()]:
+        w = len(para.split())
+        if cur and n + w > max_words:
+            out.append("\n\n".join(cur)); cur, n = [], 0
+        cur.append(para); n += w
+    if cur:
+        out.append("\n\n".join(cur))
+    return out
+
+
+def summarize(text, kind, lang, args):
+    """Summary of the transcript. Long ones are summarised piece by piece, then merged."""
+    words = len(text.split())
+    if words < 120:
+        return ""
+    tongue = "fr" if (lang or "").lower().startswith("fr") else "en"
+    kind_word = KIND_WORDS[tongue].get(kind, KIND_WORDS[tongue]["memo"])
+    locked = False
+    if not args.cpu:
+        if free_vram_mib() >= args.resume_vram:
+            log(f"  GPU has {free_vram_mib()} MiB free — summarising beside the other task")
+        else:
+            acquire_gpu_lock(); locked = True
+            free_gpu_for_task(min_free_mib=args.resume_vram)
+    try:
+        parts = pieces_of(text, args.resume_chunk_words)
+        if len(parts) == 1:
+            return ollama(RESUME_ONE[tongue].format(kind=kind_word, text=text), args.resume_model)
+        log(f"  summary in {len(parts)} pieces ({words} words)")
+        partials = [ollama(RESUME_PIECE[tongue].format(i=i + 1, n=len(parts), kind=kind_word, text=p),
+                           args.resume_model) for i, p in enumerate(parts)]
+        joined = "\n\n".join(f"[{i + 1}/{len(parts)}] {s}" for i, s in enumerate(partials) if s)
+        return ollama(RESUME_MERGE[tongue].format(n=len(parts), kind=kind_word, text=joined), args.resume_model)
+    finally:
+        if locked:
+            release_gpu_lock()
+
+
 def process(folder, name, names, args):
     base = Path(name).stem
     meta = {}
@@ -332,6 +422,17 @@ def process(folder, name, names, args):
         folder.write_text(f"{base}.txt", text)
         folder.remove(f"{base}.error.txt")
         log(f"✓ {base}.txt")
+        # The summary comes after the transcript is safely written: a model that is absent,
+        # busy or slow must never cost the recording its transcript.
+        if not args.no_resume and segments:
+            try:
+                t0 = time.time()
+                summary = summarize(text, kind, lang, args)
+                if summary:
+                    folder.write_text(f"{base}.resume.txt", summary + "\n")
+                    log(f"✓ {base}.resume.txt in {time.time() - t0:.0f} s")
+            except Exception as e:
+                log(f"  summary skipped: {type(e).__name__}: {e}")
     except Exception as e:
         import traceback
         folder.write_text(f"{base}.error.txt", f"{type(e).__name__}: {e}\n\n{traceback.format_exc()}")
@@ -369,6 +470,11 @@ def main():
     ap.add_argument("--interval", type=int, default=60, help="seconds between two looks at the folder")
     ap.add_argument("--once", action="store_true", help="one pass, then exit")
     ap.add_argument("--retry-errors", action="store_true", help="also retry recordings that failed before")
+    ap.add_argument("--no-resume", action="store_true", help="transcribe only, write no summary")
+    ap.add_argument("--resume-model", default=DEFAULT_RESUME_MODEL, help=f"Ollama model writing the summary (default {DEFAULT_RESUME_MODEL})")
+    ap.add_argument("--resume-chunk-words", type=int, default=3000, help="words per piece when a transcript is too long for one pass")
+    ap.add_argument("--resume-vram", type=int, default=20000, help="MiB of free VRAM that lets the summary run beside another GPU task")
+    ap.add_argument("--resume-missing", action="store_true", help="write the missing summaries of transcripts already there, then exit")
     args = ap.parse_args()
 
     if args.webdav:
@@ -378,6 +484,36 @@ def main():
     else:
         folder = LocalFolder(args.folder or "~/kDrive/Recordings")
     log(f"watching {args.webdav or folder.root}")
+    if args.resume_missing:
+        names = folder.names()
+        todo = [n for n in names if n.endswith(".txt") and not n.endswith((".error.txt", ".resume.txt"))
+                and f"{n[:-4]}.resume.txt" not in names]
+        log(f"{len(todo)} transcript(s) without a summary")
+        for n in sorted(todo):
+            base = n[:-4]
+            meta = {}
+            if f"{base}.json" in names:
+                try:
+                    meta = json.loads(folder.read_text(f"{base}.json"))
+                except Exception:
+                    pass
+            lang = meta.get("language") or args.language or ""
+            if f"{base}.segments.json" in names:
+                try:
+                    lang = json.loads(folder.read_text(f"{base}.segments.json")).get("language") or lang
+                except Exception:
+                    pass
+            try:
+                t0 = time.time()
+                summary = summarize(folder.read_text(n), meta.get("kind", "memo"), lang, args)
+                if summary:
+                    folder.write_text(f"{base}.resume.txt", summary + "\n")
+                    log(f"✓ {base}.resume.txt in {time.time() - t0:.0f} s")
+                else:
+                    log(f"– {base}: too short to summarise")
+            except Exception as e:
+                log(f"✗ {base}: {type(e).__name__}: {e}")
+        return
     while True:
         try:
             names = folder.names()

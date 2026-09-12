@@ -77,6 +77,13 @@ the WebDAV folder directly — and for every `<base>.m4a` the phone has dropped:
    conversation when `HF_TOKEN` is set → `<base>.txt` (paragraphs broken only where a sentence has ended, after a pause or past ~600 characters —
 the same rule as on the phone) and `<base>.segments.json`.
 
+3. **summarises** the transcript with a local model through Ollama (`gemma4:31b` by default,
+   `--resume-model` to change it, `--no-resume` to skip): a three to five sentence summary then
+   the main points, in the transcript's language → `<base>.resume.txt`. A long transcript is
+   summarised in pieces of `--resume-chunk-words` words, then the pieces are merged. The summary
+   comes after the transcript is written, so a model that is absent, busy or slow never costs a
+   recording its transcript. `--resume-missing` writes the summaries of transcripts already there.
+
 `<base>.txt` is the "done" mark; `<base>.busy` guards work in progress; `<base>.error.txt`
 carries a failure (the phone shows its first line; `--retry-errors` retries).
 
