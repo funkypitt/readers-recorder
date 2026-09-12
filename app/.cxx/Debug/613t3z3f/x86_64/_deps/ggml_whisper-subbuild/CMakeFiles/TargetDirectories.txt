@@ -1,3 +1,0 @@
-/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/x86_64/_deps/ggml_whisper-subbuild/CMakeFiles/ggml_whisper-populate.dir
-/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/x86_64/_deps/ggml_whisper-subbuild/CMakeFiles/edit_cache.dir
-/home/freedomfighter/code/readers-recorder/app/.cxx/Debug/613t3z3f/x86_64/_deps/ggml_whisper-subbuild/CMakeFiles/rebuild_cache.dir

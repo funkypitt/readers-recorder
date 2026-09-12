@@ -108,4 +108,8 @@
     <string name="cloud_hint_export">Recordings stay on this phone, and the phone itself transcribes them with Whisper (the model is fetched once). A cloud folder is optional (WebDAV: kDrive, Nextcloud…): the phone then copies each recording there, together with its transcript and its cleaned listening copy. It is an export — nothing is fetched back. Nothing goes to Google.</string>
     <string name="cloud_guide_export">How to host recordings on kDrive (Infomaniak)\n1. Open kDrive in a browser. Its web address contains a number after /drive/ — for example ksuite.infomaniak.com/kdrive/app/drive/123456/… — that number is all the app needs as the server.\n2. Username: the e-mail you log in to Infomaniak with.\n3. Password: your Infomaniak password. If two-factor authentication is on, create an application password instead (Infomaniak Manager → Security → Application passwords) and use that one.\n4. The app creates a folder named Recordings at the root of your kDrive and puts every recording there, with a small .json beside it. Rename or delete a recording in the app and the folder follows.\n5. Each recording is joined by its transcript and its cleaned copy as soon as the phone has made them. The folder is an export: nothing is ever fetched back from it.\nNextcloud and any other WebDAV server work the same way: give the full https:// address as the server.</string>
     <string name="summary_title">main points</string>
+    <string name="phase_summary">writing the main points, %d%%</string>
+    <string name="summary_on_phone">also write the main points</string>
+    <string name="summary_needs_memory">this phone has %d GB: not enough</string>
+    <string name="summarise_now">write the main points</string>
 </resources>

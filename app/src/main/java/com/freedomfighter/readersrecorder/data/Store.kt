@@ -30,7 +30,14 @@ data class Recording(
     /** Who transcribes THIS one: "phone", "cloud", or "" = whatever the settings say. */
     val via: String = "",
     /** True once the user typed a title; until then the title is automatic (date, then the transcript's first words). */
-    val named: Boolean = false
+    val named: Boolean = false,
+    /**
+     * How many times the phone has begun to write the main points of this recording. Counted
+     * before the attempt, never after: a summary that ends by killing the application would
+     * otherwise be started again for ever — which is exactly what happened the first time this
+     * was built. Past [MAX_SUMMARY_TRIES] the recording is simply left alone.
+     */
+    val summaryTries: Int = 0
 ) {
     /** The date and time, shown small under the title. */
     val whenLabel: String get() = defaultTitle(createdAt)
@@ -48,6 +55,8 @@ data class Recording(
     val status: String get() = when { transcribed -> "transcribed"; cleaned -> "cleaned"; uploaded -> "uploaded"; else -> "phone" }
 
     companion object {
+        /** Two goes at the summary, then never again unless it is asked for by hand. */
+        const val MAX_SUMMARY_TRIES = 2
         fun defaultTitle(createdAt: Long): String =
             Instant.ofEpochMilli(createdAt).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm")).lowercase()
 
@@ -80,7 +89,8 @@ class Store(context: Context) {
             Recording(o.getString("id"), o.optString("title"), o.getLong("createdAt"), o.optLong("durationMs"), o.optString("kind", "memo"),
                 o.optBoolean("uploaded"), o.optBoolean("cleaned"), o.optBoolean("transcribed"), o.optString("error"), o.optString("via"),
                 // older entries: a title that is not the date was typed by hand
-                o.optBoolean("named", o.optString("title").let { it.isNotBlank() && it != Recording.defaultTitle(o.getLong("createdAt")) }))
+                o.optBoolean("named", o.optString("title").let { it.isNotBlank() && it != Recording.defaultTitle(o.getLong("createdAt")) }),
+                o.optInt("summaryTries"))
         }.sortedByDescending { it.createdAt }
     }.getOrDefault(emptyList())
 
@@ -88,7 +98,7 @@ class Store(context: Context) {
         val arr = JSONArray()
         list.forEach { r ->
             arr.put(JSONObject().put("id", r.id).put("title", r.title).put("createdAt", r.createdAt).put("durationMs", r.durationMs).put("kind", r.kind)
-                .put("uploaded", r.uploaded).put("cleaned", r.cleaned).put("transcribed", r.transcribed).put("error", r.error).put("via", r.via).put("named", r.named))
+                .put("uploaded", r.uploaded).put("cleaned", r.cleaned).put("transcribed", r.transcribed).put("error", r.error).put("via", r.via).put("named", r.named).put("summaryTries", r.summaryTries))
         }
         val tmp = File(index.parentFile, "recordings.json.tmp")
         tmp.writeText(arr.toString())
@@ -115,6 +125,10 @@ class Store(context: Context) {
     fun summaryFile(r: Recording): File = File(dir, "${r.id}.resume.txt")
     fun summary(r: Recording): String = summaryFile(r).takeIf { it.exists() }?.readText() ?: ""
     fun setSummary(r: Recording, text: String) { summaryFile(r).writeText(text) }
+    /** Count the attempt before making it, so a summary that kills the application still counts. */
+    fun countSummaryTry(r: Recording) = update(r.id) { it.copy(summaryTries = it.summaryTries + 1) }
+    /** Ask for the points again on a recording that has used up its goes. */
+    fun retrySummary(r: Recording) = update(r.id) { it.copy(summaryTries = 0) }
 
     fun add(r: Recording) = save(_recordings.value.filterNot { it.id == r.id } + r)
     fun update(r: Recording) = save(_recordings.value.map { if (it.id == r.id) r else it })

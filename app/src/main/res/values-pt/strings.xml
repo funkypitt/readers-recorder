@@ -106,4 +106,8 @@
     <string name="cloud_hint_export">As gravações ficam neste telemóvel, que as transcreve com o Whisper (o modelo é descarregado uma vez). Uma pasta na nuvem é opcional (WebDAV: kDrive, Nextcloud…): o telemóvel copia para lá cada gravação, com a transcrição e a cópia de escuta limpa. É uma exportação — nada regressa. Nada passa pela Google.</string>
     <string name="cloud_guide_export">Alojar as gravações no kDrive (Infomaniak), passo a passo\n1. Abra o kDrive num navegador. O endereço contém um número depois de /drive/ — por exemplo ksuite.infomaniak.com/kdrive/app/drive/123456/… — esse número basta como servidor.\n2. Utilizador: o e-mail com que entra na Infomaniak.\n3. Palavra-passe: a sua palavra-passe Infomaniak. Com autenticação em dois passos, crie antes uma palavra-passe de aplicação (Infomaniak Manager → Segurança → Palavras-passe de aplicação).\n4. A aplicação cria uma pasta Recordings na raiz do seu kDrive e coloca lá cada gravação, com um pequeno .json ao lado. Se renomear ou apagar na aplicação, a pasta acompanha.\n5. A transcrição e a cópia limpa juntam-se assim que o telemóvel as produz. A pasta é uma exportação: nunca se traz nada de volta.\nO Nextcloud e qualquer outro servidor WebDAV funcionam da mesma forma: indique o endereço https:// completo como servidor.</string>
     <string name="summary_title">pontos principais</string>
+    <string name="phase_summary">a escrever os pontos principais, %d %%</string>
+    <string name="summary_on_phone">escrever também os pontos principais</string>
+    <string name="summary_needs_memory">este telefone tem %d GB: não chega</string>
+    <string name="summarise_now">escrever os pontos principais</string>
 </resources>

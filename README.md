@@ -8,6 +8,10 @@ conversation with one tap; if you want, the recording goes to **your own cloud f
 normalises its loudness and transcribes it with WhisperX. The transcript and the cleaned
 audio come back to the phone.
 
+The phone can also **write the main points of a transcript by itself**, with a three-billion
+parameter model fetched on demand — an option, off until you ask for it, on any phone with
+enough memory to hold it.
+
 **By default nothing leaves the phone — and the phone transcribes by itself**, with
 [whisper.cpp](https://github.com/ggerganov/whisper.cpp) vendored in (quantised `base`,
 `small` or `medium` model, fetched once, 57–539 MB), plus a light-touch cleaned copy (60 Hz
@@ -40,7 +44,9 @@ much bigger model.
   the two on the same kind of material. The choice is shown in the recording's status line.
 * Settings: who transcribes (this phone · my computer through the cloud folder · nobody), the
   transcription quality on the phone — normal (Whisper small, 190 MB, the default) or high
-  quality, much slower (large-v3-turbo, 574 MB) —, the cleaned copy, the cloud folder (or "forget it — recordings stay
+  quality, much slower (large-v3-turbo, 574 MB) —, the cleaned copy, **the main points written
+  on the phone** (off; the first tap fetches the 1.93 GB model, and a phone with less than about
+  6 GB of memory is told plainly that it cannot hold it), the cloud folder (or "forget it — recordings stay
   here"), the language spoken (the phone's language, English, or detected), the default kind,
   the look.
 * On the phone, `ProcessService` (a foreground service with a progress notification) works in
@@ -53,6 +59,22 @@ much bigger model.
   time: the first measures the loudness of the high-passed signal, the second applies the same
   high-pass and a constant gain to −19 LUFS and encodes AAC. A recording transcribed on the phone is
   uploaded with its `.txt`, so the workstation worker leaves it alone.
+* **The main points, written here** (`summary/`): once the option is on, every transcript made
+  on this phone gets a list of points beside it (`<id>.resume.txt`), shown above the transcript
+  and exported to the cloud folder with it.
+  [llama.cpp](https://github.com/ggml-org/llama.cpp) is vendored in beside whisper.cpp — its own
+  ggml, its own library, nothing shared — and runs Qwen2.5 3B Instruct (Q4_K_M, 1.93 GB, fetched
+  once) on the processor alone, in a 4096-token context with small batches. The transcript is
+  read in pieces of about 900 words, each piece asked for its points, and the notes are merged
+  into eight. The instruction asks for **one thing only**: measured beforehand on the same
+  interview, a model this size understands what it reads but cannot follow "a summary, then
+  points" — asked for points alone, it obeys. The prompt goes through the model's own chat
+  template, without which a chat model answers beside the question.
+  Three guards, each learned the hard way: a phone too small is refused the option outright
+  rather than killed mid-answer; an attempt is counted **before** it is made, so a summary that
+  takes the application down with it can never restart the same recording for ever (two goes,
+  then the recording is left alone until "write the main points" is chosen by hand); and a
+  failure is always silent — a recording keeps its transcript whatever happens here.
 * **Widgets** for any launcher: "● record" with the latest recording under it (while
   recording, a live Chronometer and ■); and **listen**: one recording at a time, newest
   first, ▶ / ❚❚ plays and pauses, ‹ › step to the more recent and the older ones (a standard
@@ -68,9 +90,10 @@ much bigger model.
 One code base, two builds, chosen by the `audience` flavour dimension:
 
 * **`publique`** — the build published on F-Droid. A cloud folder is an **export**: the phone
-  uploads the recording, the transcript it made itself and its cleaned listening copy
-  (`<base>_nettoye.m4a`), and never fetches anything back. "Who transcribes" offers this phone
-  or nobody.
+  uploads the recording, the transcript it made itself, its cleaned listening copy
+  (`<base>_nettoye.m4a`) and the points it wrote (`<base>.resume.txt`), and never fetches
+  anything back. "Who transcribes" offers this phone or nobody. The main points written on the
+  phone are offered here too: they need nothing but the phone.
 * **`prive`** — never published. Adds what only a workstation can serve: cleaning, transcription
   and the summary by the computer behind the WebDAV folder (`worker/recorder_worker.py`), the
   per-recording chooser on a long press, and fetching the results back.

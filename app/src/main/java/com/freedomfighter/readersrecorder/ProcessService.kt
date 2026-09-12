@@ -23,6 +23,8 @@ import com.freedomfighter.readersrecorder.audio.Normalize
 import com.freedomfighter.readersrecorder.audio.Pcm
 import com.freedomfighter.readersrecorder.audio.Resample
 import com.freedomfighter.readersrecorder.data.Recording
+import com.freedomfighter.readersrecorder.summary.SummaryModel
+import com.freedomfighter.readersrecorder.summary.Summariser
 import com.freedomfighter.readersrecorder.whisper.Models
 import com.freedomfighter.readersrecorder.whisper.Paragraphs
 import com.freedomfighter.readersrecorder.whisper.Prompts
@@ -52,6 +54,8 @@ class ProcessService : Service() {
     private val cancelled = AtomicBoolean(false)
     private var lock: PowerManager.WakeLock? = null
     private var running = false
+    /** Recordings whose summary failed while this service was up: not tried again before it restarts. */
+    private val summaryFailedHere = mutableSetOf<String>()
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -72,7 +76,9 @@ class ProcessService : Service() {
         try {
             while (!cancelled.get()) {
                 val s = app.prefs.settings.value
-                val r = app.store.recordings.value.firstOrNull { needsWork(it, s) && it.id != RecordService.Live.id } ?: break
+                val r = app.store.recordings.value.firstOrNull {
+                    needsWork(app, it, s) && it.id != RecordService.Live.id && it.id !in summaryFailedHere
+                } ?: break
                 Live.id = r.id; Live.percent = 0
                 try {
                     withContext(Dispatchers.Default) { processOne(app, r, s.language, s.model) }
@@ -90,6 +96,9 @@ class ProcessService : Service() {
 
     private fun processOne(app: App, r: Recording, language: String, modelKey: String) {
         val store = app.store
+        // Already transcribed: the only thing left is the summary, which the option may have been
+        // turned on long after the recording was made.
+        if (r.transcribed) { runSummary(app, r, language); return }
         val src = Uri.fromFile(store.audio(r))
         val lang = language.ifBlank { null }
         val totalMs = r.durationMs.coerceAtLeast(1)
@@ -128,6 +137,57 @@ class ProcessService : Service() {
             if (Normalize.cleanCopy(this, src, store.cleanTarget(r, "m4a"), totalMs, { Live.percent = it }, { cancelled.get() })) {
                 store.update(r.id) { it.copy(cleaned = true) }
             }
+        }
+        // 4. the main points, written by a small model on the phone. Last on purpose: it is the
+        //    slowest and the least essential step, and a recording must never lose its transcript
+        //    because the summary failed. Silent when the model is not here — the setting offers it.
+        runSummary(app, r, lang ?: detected)
+    }
+
+    /**
+     * The main points, written on the phone. Separate on purpose: it is the slowest and the least
+     * essential step, it must never cost a recording its transcript, and a recording transcribed
+     * long ago must be able to reach it without being transcribed again.
+     *
+     * Two guards, both learned the hard way. The attempt is counted BEFORE it starts, because the
+     * failure to fear is the one that takes the whole application with it: without the count, the
+     * queue would pick the same recording again as soon as the service came back, and the phone
+     * would load two gigabytes of weights in a loop. And a phone whose memory is already spoken
+     * for is left alone until later rather than pushed into that failure.
+     */
+    private fun runSummary(app: App, r: Recording, language: String) {
+        val s = app.prefs.settings.value
+        if (!s.summaryOnPhone || cancelled.get()) return
+        if (!SummaryModel.isDownloaded(this) || app.store.summaryFile(r).exists()) return
+        if (r.summaryTries >= Recording.MAX_SUMMARY_TRIES) return
+        val text = app.store.transcript(r)
+        // Marked transcribed but nothing on disk: leave it, and do not come back to it in this
+        // pass — every early return here must drop the recording, or the queue spins on it.
+        if (text.isBlank()) { summaryFailedHere += r.id; return }
+        if (!SummaryModel.roomRightNow(this)) {
+            // Not a failure and not counted, but this pass must let it go — otherwise the queue
+            // would come straight back to it and spin on the same check.
+            android.util.Log.i("ReadersLlama", "not enough free memory right now, the summary waits")
+            summaryFailedHere += r.id
+            return
+        }
+        Live.phase = "summary"; Live.percent = 0
+        app.store.countSummaryTry(r)
+        val points = Summariser.summarise(
+            model = SummaryModel.file(this),
+            transcript = text,
+            language = language,
+            onProgress = { Live.percent = it.coerceIn(0, 99) },
+            cancelled = { cancelled.get() },
+        )
+        if (points != null && !cancelled.get()) {
+            app.store.setSummary(r, points)
+            app.store.update(r.id) { it.copy(summaryTries = 0) }   // done: nothing left to count
+        } else if (!cancelled.get()) {
+            summaryFailedHere += r.id                              // not again in this pass
+        } else {
+            // Stopped by hand: that is not a failure, and it must not use up one of the two goes.
+            app.store.update(r.id) { it.copy(summaryTries = (it.summaryTries - 1).coerceAtLeast(0)) }
         }
     }
 
@@ -183,18 +243,28 @@ class ProcessService : Service() {
             "decode" -> ctx.getString(R.string.phase_decode)
             "transcribe" -> ctx.getString(R.string.phase_transcribe, percent)
             "clean" -> ctx.getString(R.string.phase_clean)
+            "summary" -> ctx.getString(R.string.phase_summary, percent)
             else -> ctx.getString(R.string.phase_waiting)
         }
 
-        /** What is left to do on a recording: transcribe it, here on the phone. */
-        fun needsWork(r: Recording, s: com.freedomfighter.readersrecorder.data.Settings): Boolean =
-            !r.transcribed && r.durationMs > 0 && r.error.isBlank() && r.mode(s.processing) == "phone"
+        /**
+         * What is left to do on a recording: transcribe it, or — the setting being on, the model
+         * here, the points not written and the goes not used up — summarise one that is already
+         * transcribed. That second case is the ordinary one: the option is usually turned on after
+         * the fact, and a summary interrupted by a reboot would otherwise never be written again.
+         */
+        fun needsWork(app: App, r: Recording, s: com.freedomfighter.readersrecorder.data.Settings): Boolean {
+            if (r.durationMs <= 0 || r.error.isNotBlank() || r.mode(s.processing) != "phone") return false
+            if (!r.transcribed) return true
+            return s.summaryOnPhone && r.summaryTries < Recording.MAX_SUMMARY_TRIES &&
+                SummaryModel.isDownloaded(app) && !app.store.summaryFile(r).exists()
+        }
 
         /** Start the queue if the phone is the transcriber and something waits. */
         fun kick(ctx: Context) {
             val app = ctx.applicationContext as App
             val s = app.prefs.settings.value
-            if (app.store.recordings.value.none { needsWork(it, s) }) return
+            if (app.store.recordings.value.none { needsWork(app, it, s) }) return
             ContextCompat.startForegroundService(ctx, Intent(ctx, ProcessService::class.java))
         }
         fun cancel(ctx: Context) = ctx.startService(Intent(ctx, ProcessService::class.java).setAction(ACTION_CANCEL))

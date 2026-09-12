@@ -32,6 +32,7 @@ object Sync {
                 // Transcribed here already: send the text along, so the workstation leaves this one alone.
                 if (r.transcribed) dav.put(folder + encodeSegment(r.base + ".txt"), store.transcript(r))
                 putPhoneClean(dav, folder, store, r)
+                putPhoneSummary(dav, folder, store, r)
                 store.update(r.copy(uploaded = true, error = "")); up++
             } catch (e: Exception) { store.update(r.copy(error = e.message ?: "upload failed")) }
         }
@@ -45,6 +46,8 @@ object Sync {
             for (r in late) runCatching {
                 if (r.transcribed && r.base + ".txt" !in names) dav.put(folder + encodeSegment(r.base + ".txt"), store.transcript(r))
                 if (r.base + "_nettoye.m4a" !in names) putPhoneClean(dav, folder, store, r)
+                // The points the phone wrote itself land well after the transcript, hence here.
+                if (r.base + ".resume.txt" !in names) putPhoneSummary(dav, folder, store, r)
             }
         }
         // ---- down ----
@@ -83,6 +86,15 @@ object Sync {
     private fun putPhoneClean(dav: WebDav, folder: String, store: Store, r: Recording) {
         val clean = store.cleanTarget(r, "m4a")
         if (clean.exists()) dav.putFile(folder + encodeSegment(r.base + "_nettoye.m4a"), clean, "audio/mp4")
+    }
+
+    /**
+     * The main points the phone wrote, beside the transcript. Only ever the phone's own work:
+     * a recording the workstation handles is never summarised here, so this can never overwrite
+     * the far better summary the computer writes under the same name.
+     */
+    private fun putPhoneSummary(dav: WebDav, folder: String, store: Store, r: Recording) {
+        if (store.summaryFile(r).exists()) dav.put(folder + encodeSegment(r.base + ".resume.txt"), store.summary(r))
     }
 
     fun meta(r: Recording, s: Settings): JSONObject = JSONObject()

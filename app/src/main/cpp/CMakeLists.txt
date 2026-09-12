@@ -46,3 +46,46 @@ elseif (ANDROID_ABI STREQUAL "x86_64")
 else ()
     build_variant(whisper)
 endif ()
+
+# ── llama.cpp (MIT), vendored in ./llama.cpp: the summary, written on the phone ──────────────
+# Its ggml is a different version from whisper's, and both end up in the same app. They can
+# only coexist because each library hides everything but its JNI entry points, so nothing
+# resolves across the two. Their generated version headers also collide by name, hence the
+# separate gen_llama directory, included by these targets only.
+set(L ${CMAKE_SOURCE_DIR}/llama.cpp)
+set(LLAMA_VERSION "0.4.0")
+set(LLAMA_BUILD_COMMIT "e71b805")
+set(GGML_VERSION "0.23.0")   # llama.cpp carries its own, newer ggml; whisper's header is already generated
+configure_file(${L}/ggml/src/ggml-version.h.in ${CMAKE_BINARY_DIR}/gen_llama/ggml-version.h @ONLY)
+configure_file(${L}/src/llama-version.h.in     ${CMAKE_BINARY_DIR}/gen_llama/llama-version.h @ONLY)
+
+file(GLOB LLAMA_GGML ${L}/ggml/src/*.c ${L}/ggml/src/*.cpp)
+file(GLOB LLAMA_GGML_CPU ${L}/ggml/src/ggml-cpu/*.c ${L}/ggml/src/ggml-cpu/*.cpp
+                         ${L}/ggml/src/ggml-cpu/amx/*.cpp ${L}/ggml/src/ggml-cpu/llamafile/*.cpp)
+file(GLOB LLAMA_SRC ${L}/src/*.cpp ${L}/src/models/*.cpp)
+if (ANDROID_ABI STREQUAL "arm64-v8a")
+    file(GLOB LLAMA_ARCH ${L}/ggml/src/ggml-cpu/arch/arm/*.c ${L}/ggml/src/ggml-cpu/arch/arm/*.cpp)
+elseif (ANDROID_ABI STREQUAL "x86_64")
+    file(GLOB LLAMA_ARCH ${L}/ggml/src/ggml-cpu/arch/x86/*.c ${L}/ggml/src/ggml-cpu/arch/x86/*.cpp)
+endif ()
+
+function(build_llama name)
+    add_library(${name} SHARED ${LLAMA_GGML} ${LLAMA_GGML_CPU} ${LLAMA_ARCH} ${LLAMA_SRC}
+                               ${CMAKE_SOURCE_DIR}/llama_jni.c)
+    target_include_directories(${name} PRIVATE ${CMAKE_BINARY_DIR}/gen_llama ${L}/include ${L}/src
+        ${L}/ggml/include ${L}/ggml/src ${L}/ggml/src/ggml-cpu)
+    target_compile_definitions(${name} PRIVATE GGML_USE_CPU GGML_USE_LLAMAFILE _GNU_SOURCE)
+    target_compile_options(${name} PRIVATE -O3 -fvisibility=hidden -fvisibility-inlines-hidden
+        -ffunction-sections -fdata-sections -Wno-unused-function -Wno-unused-parameter ${ARGN})
+    target_link_options(${name} PRIVATE -Wl,--gc-sections -Wl,--exclude-libs,ALL)
+    target_link_libraries(${name} ${LOG_LIB} android)
+endfunction()
+
+if (ANDROID_ABI STREQUAL "arm64-v8a")
+    build_llama(llama_v8fp16_va -march=armv8.2-a+fp16)
+    build_llama(llama -march=armv8-a)
+elseif (ANDROID_ABI STREQUAL "x86_64")
+    build_llama(llama -mavx2 -mfma -mf16c -msse4.2)
+else ()
+    build_llama(llama)
+endif ()

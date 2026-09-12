@@ -31,6 +31,24 @@ class App : Application() {
         Thread { runCatching { com.freedomfighter.readersrecorder.whisper.Models.cleanup(this) } }.start()
     }
 
+    /**
+     * Fetch the model that writes the main points, then turn the setting on. Here rather than in
+     * the screen: it takes minutes, and it must survive the settings screen being left.
+     */
+    fun fetchSummaryModel() {
+        if (com.freedomfighter.readersrecorder.summary.SummaryModel.downloading.value >= 0) return
+        scope.launch {
+            status.value = try {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    com.freedomfighter.readersrecorder.summary.SummaryModel.download(this@App)
+                }
+                prefs.setSummaryOnPhone(true)
+                ProcessService.kick(this@App)
+                ""
+            } catch (e: Exception) { e.message ?: "model download failed" }
+        }
+    }
+
     /** Upload what is new, fetch transcripts and cleaned audio that have appeared. */
     fun sync() {
         val s = prefs.settings.value

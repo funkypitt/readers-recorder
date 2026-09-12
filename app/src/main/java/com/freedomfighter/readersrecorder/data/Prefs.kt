@@ -32,7 +32,9 @@ data class Settings(
     /** whisper.cpp model on the phone: base, small, medium. */
     val model: String = "normal",
     /** Also make the normalised listening copy on the phone. */
-    val cleanOnPhone: Boolean = true
+    val cleanOnPhone: Boolean = true,
+    /** Also write the main points of the transcript on the phone. Off until the model is fetched. */
+    val summaryOnPhone: Boolean = false
 ) {
     val configured: Boolean get() = server.isNotBlank()
     val folderUrl: String get() = server.trim().trimEnd('/') + "/" + folder.trim().trim('/').split("/").joinToString("/") { encodeSegment(it) } + "/"
@@ -65,7 +67,8 @@ class Prefs(context: Context) {
             if (it == "cloud" && !com.freedomfighter.readersrecorder.BuildConfig.PRIVATE) "phone" else it
         },
         model = sp.getString("model", "normal") ?: "normal",
-        cleanOnPhone = sp.getBoolean("clean_on_phone", true)
+        cleanOnPhone = sp.getBoolean("clean_on_phone", true),
+        summaryOnPhone = sp.getBoolean("summary_on_phone", false)
     )
     private inline fun <reified E : Enum<E>> enumOr(name: String?, default: E): E =
         name?.let { runCatching { enumValueOf<E>(it) }.getOrNull() } ?: default
@@ -82,6 +85,7 @@ class Prefs(context: Context) {
     fun setProcessing(v: String) = sp.edit().putString("processing", v).apply()
     fun setModel(v: String) = sp.edit().putString("model", v).apply()
     fun setCleanOnPhone(v: Boolean) = sp.edit().putBoolean("clean_on_phone", v).apply()
+    fun setSummaryOnPhone(v: Boolean) = sp.edit().putBoolean("summary_on_phone", v).apply()
     fun toggleTheme(systemIsDark: Boolean) {
         val dark = when (_settings.value.theme) { ThemeMode.DARK -> true; ThemeMode.LIGHT -> false; ThemeMode.SYSTEM -> systemIsDark }
         setTheme(if (dark) ThemeMode.LIGHT else ThemeMode.DARK)

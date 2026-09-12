@@ -54,6 +54,7 @@ import com.freedomfighter.readersrecorder.data.TextSize
 import com.freedomfighter.readersrecorder.sync.Sync
 import com.freedomfighter.readersrecorder.ProcessService
 import com.freedomfighter.readersrecorder.PlayerService
+import com.freedomfighter.readersrecorder.summary.SummaryModel
 import com.freedomfighter.readersrecorder.whisper.Models
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -332,6 +333,11 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
             if (settings.configured && !r.uploaded) add(MenuItem(stringResource(R.string.upload_now)) { app.sync() })
             if (settings.configured && r.uploaded && r.error.isNotBlank()) add(MenuItem(stringResource(R.string.retry)) { app.store.update(r.copy(error = "")); app.sync() })
             if (r.mode(settings.processing) == "phone" && !r.transcribed) add(MenuItem(stringResource(R.string.transcribe_now)) { app.store.update(r.copy(error = "")); ProcessService.kick(context) })
+            // The points, asked for by hand: after two failed goes the queue leaves a recording
+            // alone, and this is how it is told to try once more.
+            if (settings.summaryOnPhone && r.transcribed && !app.store.summaryFile(r).exists() &&
+                r.mode(settings.processing) == "phone" && SummaryModel.isDownloaded(context))
+                add(MenuItem(stringResource(R.string.summarise_now)) { app.store.retrySummary(r); ProcessService.kick(context) })
             if (ProcessService.Live.id == r.id) add(MenuItem(stringResource(R.string.stop)) { ProcessService.cancel(context) })
             add(MenuItem(stringResource(R.string.delete), secondary = if (r.uploaded) stringResource(R.string.delete_hint_server) else null) {
                 if (isThis) PlayerService.stop(context)
@@ -413,6 +419,29 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
                         app.prefs.setModel(if (m == Models.HIGH) Models.NORMAL.key else Models.HIGH.key)
                     }
                     TextRow(if (s.cleanOnPhone) stringResource(R.string.on) else stringResource(R.string.off), secondary = stringResource(R.string.clean_on_phone)) { app.prefs.setCleanOnPhone(!s.cleanOnPhone) }
+                    // The summary needs a model of its own, two gigabytes of it: the row fetches it
+                    // on the first tap, and only then can the setting be turned on. A phone too small
+                    // to hold it is told so plainly rather than offered a switch that cannot work.
+                    val roomy = remember { SummaryModel.phoneCanHoldIt(context) }
+                    val fetching by SummaryModel.downloading.collectAsState()
+                    val here = remember(fetching) { SummaryModel.isDownloaded(context) }
+                    if (!roomy) {
+                        TextRow(stringResource(R.string.off), secondary = stringResource(R.string.summary_on_phone) + " · " +
+                            stringResource(R.string.summary_needs_memory, SummaryModel.phoneMemoryGb(context)))
+                    } else {
+                        val summaryState = when {
+                            fetching >= 0 -> " · $fetching%"
+                            !here -> " · " + stringResource(R.string.model_not_yet)
+                            else -> ""
+                        }
+                        TextRow(
+                            if (s.summaryOnPhone && here) stringResource(R.string.on) else stringResource(R.string.off),
+                            secondary = stringResource(R.string.summary_on_phone) + " · " + SummaryModel.MB + " MB" + summaryState,
+                        ) {
+                            if (here) { app.prefs.setSummaryOnPhone(!s.summaryOnPhone); if (!s.summaryOnPhone) ProcessService.kick(context) }
+                            else app.fetchSummaryModel()
+                        }
+                    }
                 }
                 val languages = Prefs.languages()
                 TextRow(if (s.language.isBlank()) stringResource(R.string.language_auto) else java.util.Locale(s.language).getDisplayLanguage(java.util.Locale.getDefault()), secondary = stringResource(R.string.language)) {

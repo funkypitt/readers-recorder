@@ -7,3 +7,5 @@
 /app/build
 /captures
 *.apk
+/app/.cxx
+__pycache__/
