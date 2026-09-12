@@ -172,7 +172,10 @@ fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
             if (live.recording) TextRow("■  " + stringResource(R.string.notif_recording) + " · " + RecordService.clock(live.elapsedMs), inverted = true) { nav.push(Screen.Record) }
             // Tap records; a long press asks, for this one recording, who will transcribe it.
             else if (selecting) TextRow(stringResource(R.string.delete_selected, selected.size), inverted = selected.isNotEmpty()) { if (selected.isNotEmpty()) deleteMany(selected.toList()) }
-            else Box(Modifier.fillMaxWidth().pressable(onClick = { activity.record() }, onLongPress = { if (settings.configured) viaMenu = true else activity.record() })) {
+            else Box(Modifier.fillMaxWidth().pressable(onClick = { activity.record() }, onLongPress = {
+                // Choosing who transcribes only makes sense where the computer can: the private build.
+                if (settings.configured && com.freedomfighter.readersrecorder.BuildConfig.PRIVATE) viaMenu = true else activity.record()
+            })) {
                 TextRow("●  " + stringResource(R.string.record), inverted = true)
             }
             Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars).background(if (live.recording || true) colors.fg else colors.bg).fillMaxWidth())
@@ -370,24 +373,27 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
         Column(Modifier.fillMaxSize()) {
             ScreenTitle(stringResource(R.string.settings), onBack = { nav.pop() })
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                Small(stringResource(R.string.cloud_hint), Modifier.padding(horizontal = rowPadH).padding(top = 16.dp, bottom = 4.dp), maxLines = 8)
+                Small(stringResource(if (com.freedomfighter.readersrecorder.BuildConfig.PRIVATE) R.string.cloud_hint else R.string.cloud_hint_export), Modifier.padding(horizontal = rowPadH).padding(top = 16.dp, bottom = 4.dp), maxLines = 8)
                 var guide by remember { mutableStateOf(false) }
                 if (!s.configured) {
                     TextRow(stringResource(R.string.cloud_setup), secondary = stringResource(R.string.local_only_short)) { draft = Triple("", "", ""); prompt = "server" }
                     TextRow(stringResource(R.string.cloud_how), size = typo.title) { guide = !guide }
-                    if (guide) Small(stringResource(R.string.cloud_guide), Modifier.padding(horizontal = rowPadH).padding(bottom = 10.dp), maxLines = 40)
+                    if (guide) Small(stringResource(if (com.freedomfighter.readersrecorder.BuildConfig.PRIVATE) R.string.cloud_guide else R.string.cloud_guide_export), Modifier.padding(horizontal = rowPadH).padding(bottom = 10.dp), maxLines = 40)
                 } else {
                     TextRow(s.server.removePrefix("https://"), secondary = stringResource(R.string.server) + " · " + s.username) { draft = Triple(s.server, s.username, s.password); prompt = "server" }
                     TextRow(s.folder, secondary = stringResource(R.string.folder)) { prompt = "folder" }
                     TextRow(if (syncing) stringResource(R.string.syncing) else status.ifBlank { stringResource(R.string.sync_now) }, secondary = stringResource(R.string.sync_now)) { app.sync() }
-                    TextRow(if (s.fetchCleaned) stringResource(R.string.on) else stringResource(R.string.off), secondary = stringResource(R.string.fetch_cleaned)) { app.prefs.setFetchCleaned(!s.fetchCleaned) }
+                    if (com.freedomfighter.readersrecorder.BuildConfig.PRIVATE)
+                        TextRow(if (s.fetchCleaned) stringResource(R.string.on) else stringResource(R.string.off), secondary = stringResource(R.string.fetch_cleaned)) { app.prefs.setFetchCleaned(!s.fetchCleaned) }
                     TextRow(stringResource(R.string.forget_server), size = typo.title) { app.prefs.setAccount("", s.folder, "", ""); app.prefs.setProcessing("phone") }
                     TextRow(stringResource(R.string.cloud_how), size = typo.title) { guide = !guide }
-                    if (guide) Small(stringResource(R.string.cloud_guide), Modifier.padding(horizontal = rowPadH).padding(bottom = 10.dp), maxLines = 40)
+                    if (guide) Small(stringResource(if (com.freedomfighter.readersrecorder.BuildConfig.PRIVATE) R.string.cloud_guide else R.string.cloud_guide_export), Modifier.padding(horizontal = rowPadH).padding(bottom = 10.dp), maxLines = 40)
                 }
                 Rule(Modifier.padding(vertical = 8.dp))
                 // Who does the work: the phone itself (whisper.cpp), the computer behind the cloud folder, or nobody.
-                val modes = if (s.configured) listOf("phone", "cloud", "off") else listOf("phone", "off")
+                // "my computer" exists only in the private build; elsewhere the folder is an export.
+                val modes = if (s.configured && com.freedomfighter.readersrecorder.BuildConfig.PRIVATE)
+                    listOf("phone", "cloud", "off") else listOf("phone", "off")
                 TextRow(stringResource(when (s.processing) { "cloud" -> R.string.processing_cloud; "off" -> R.string.processing_off; else -> R.string.processing_phone }), secondary = stringResource(R.string.processing)) {
                     val next = modes[(modes.indexOf(s.processing).coerceAtLeast(0) + 1) % modes.size]
                     app.prefs.setProcessing(next); if (next == "phone") ProcessService.kick(context)

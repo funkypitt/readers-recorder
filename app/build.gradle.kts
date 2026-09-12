@@ -4,6 +4,13 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// One code base, two audiences. The public build is the one published on F-Droid; the private
+// one adds what only this workstation can serve (cleaning and transcription by the computer
+// behind the WebDAV folder). Its version code stays 500 ahead, so a public release can never
+// land on the phone as an "update" and quietly take those features away.
+val baseVersionCode = 12
+val baseVersionName = "1.6.0"
+
 android {
     namespace = "com.freedomfighter.readersrecorder"
     compileSdk = 35
@@ -12,10 +19,28 @@ android {
         applicationId = "com.freedomfighter.readersrecorder"
         minSdk = 26
         targetSdk = 34
-        versionCode = 11
-        versionName = "1.5.2"
+        versionCode = baseVersionCode
+        versionName = baseVersionName
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         externalNativeBuild { cmake { arguments += listOf("-DGGML_NATIVE=OFF", "-DANDROID_STL=c++_static") } }
+    }
+
+    flavorDimensions += "audience"
+    productFlavors {
+        create("publique") {
+            dimension = "audience"
+            // Published on F-Droid. A cloud folder is an export: the phone sends what it made and
+            // waits for nothing in return.
+            buildConfigField("boolean", "PRIVATE", "false")
+        }
+        create("prive") {
+            dimension = "audience"
+            // Never published: the computer behind the WebDAV folder cleans, transcribes and
+            // summarises. Same application id, so it updates the app already on the phone.
+            versionCode = baseVersionCode + 500
+            versionNameSuffix = "-prive"
+            buildConfigField("boolean", "PRIVATE", "true")
+        }
     }
 
     buildTypes { release { isMinifyEnabled = false } }

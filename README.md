@@ -63,6 +63,27 @@ much bigger model.
   shows on the recording's page and in the notification. Starting a recording stops playback.
 * English, French, German, Spanish, Portuguese, Russian.
 
+## Two audiences
+
+One code base, two builds, chosen by the `audience` flavour dimension:
+
+* **`publique`** — the build published on F-Droid. A cloud folder is an **export**: the phone
+  uploads the recording, the transcript it made itself and its cleaned listening copy
+  (`<base>_nettoye.m4a`), and never fetches anything back. "Who transcribes" offers this phone
+  or nobody.
+* **`prive`** — never published. Adds what only a workstation can serve: cleaning, transcription
+  and the summary by the computer behind the WebDAV folder (`worker/recorder_worker.py`), the
+  per-recording chooser on a long press, and fetching the results back.
+
+The private build keeps the same application id and its version code stays **500 ahead**
+(`baseVersionCode + 500`), so an F-Droid release of the public build can never land on the phone
+as an update and quietly remove those features.
+
+```
+./gradlew assemblePubliqueRelease     # F-Droid
+./gradlew assemblePriveRelease        # the phone of whoever runs the worker
+```
+
 ## The workstation: `worker/recorder_worker.py`
 
 Watches the recordings folder — the kDrive client's local mirror (`~/kDrive/Recordings`) or

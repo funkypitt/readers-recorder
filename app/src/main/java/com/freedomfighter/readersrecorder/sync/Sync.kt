@@ -1,5 +1,6 @@
 package com.freedomfighter.readersrecorder.sync
 
+import com.freedomfighter.readersrecorder.BuildConfig
 import com.freedomfighter.readersrecorder.data.Recording
 import com.freedomfighter.readersrecorder.data.Settings
 import com.freedomfighter.readersrecorder.data.Store
@@ -30,11 +31,27 @@ object Sync {
                 dav.put(folder + encodeSegment(r.base + ".json"), meta(r, s).toString(2))
                 // Transcribed here already: send the text along, so the workstation leaves this one alone.
                 if (r.transcribed) dav.put(folder + encodeSegment(r.base + ".txt"), store.transcript(r))
+                putPhoneClean(dav, folder, store, r)
                 store.update(r.copy(uploaded = true, error = "")); up++
             } catch (e: Exception) { store.update(r.copy(error = e.message ?: "upload failed")) }
         }
+        // ---- the export catches up ----
+        // A recording is usually uploaded before the phone has finished transcribing and cleaning it,
+        // so what came later is sent on a following sync. The server listing decides, which keeps this
+        // stateless: whatever is missing up there and ready down here goes up.
+        val late = store.recordings.value.filter { it.uploaded && (it.transcribed || it.cleaned) }
+        if (late.isNotEmpty()) {
+            val names = runCatching { dav.list(folder).map { it.name }.toSet() }.getOrNull() ?: emptySet()
+            for (r in late) runCatching {
+                if (r.transcribed && r.base + ".txt" !in names) dav.put(folder + encodeSegment(r.base + ".txt"), store.transcript(r))
+                if (r.base + "_nettoye.m4a" !in names) putPhoneClean(dav, folder, store, r)
+            }
+        }
         // ---- down ----
-        val waiting = store.recordings.value.filter { it.mode(s.processing) == "cloud" && it.uploaded && (!it.transcribed || (s.fetchCleaned && !it.cleaned)) }
+        // Only the private build expects anything back: the workstation's transcript, cleaned audio
+        // and summary. The public build's folder is an export and nothing is ever fetched from it.
+        val waiting = if (!BuildConfig.PRIVATE) emptyList() else
+            store.recordings.value.filter { it.mode(s.processing) == "cloud" && it.uploaded && (!it.transcribed || (s.fetchCleaned && !it.cleaned)) }
         if (waiting.isNotEmpty()) {
             val names = dav.list(folder).map { it.name }.toSet()
             for (r in waiting) {
@@ -54,6 +71,12 @@ object Sync {
         return Result(up, tr, cl)
     }
 
+    /** The listening copy the phone itself made, beside the original as `<base>_nettoye.m4a`. */
+    private fun putPhoneClean(dav: WebDav, folder: String, store: Store, r: Recording) {
+        val clean = store.cleanTarget(r, "m4a")
+        if (clean.exists()) dav.putFile(folder + encodeSegment(r.base + "_nettoye.m4a"), clean, "audio/mp4")
+    }
+
     fun meta(r: Recording, s: Settings): JSONObject = JSONObject()
         .put("title", r.title).put("kind", r.kind).put("createdAt", r.createdAt).put("durationMs", r.durationMs)
         .put("language", s.language).put("app", "readers-recorder")
@@ -62,13 +85,13 @@ object Sync {
     fun deleteRemote(r: Recording, s: Settings) {
         if (!s.configured) return
         val dav = WebDav(s.username, s.password)
-        for (suffix in listOf(".m4a", ".json", ".txt", "_nettoye.mp3", "_nettoyage.json", ".segments.json", ".error.txt")) runCatching { dav.delete(s.folderUrl + encodeSegment(r.base + suffix)) }
+        for (suffix in listOf(".m4a", ".json", ".txt", "_nettoye.m4a", "_nettoye.mp3", "_nettoyage.json", ".segments.json", ".resume.txt", ".error.txt")) runCatching { dav.delete(s.folderUrl + encodeSegment(r.base + suffix)) }
     }
 
     /** After a rename the server files must follow the new base. */
     fun renameRemote(old: Recording, new: Recording, s: Settings) {
         if (!s.configured || old.base == new.base || !old.uploaded) return
         val dav = WebDav(s.username, s.password)
-        for (suffix in listOf(".m4a", ".json", ".txt", "_nettoye.mp3", "_nettoyage.json", ".segments.json")) runCatching { dav.move(s.folderUrl + encodeSegment(old.base + suffix), s.folderUrl + encodeSegment(new.base + suffix)) }
+        for (suffix in listOf(".m4a", ".json", ".txt", "_nettoye.m4a", "_nettoye.mp3", "_nettoyage.json", ".segments.json", ".resume.txt")) runCatching { dav.move(s.folderUrl + encodeSegment(old.base + suffix), s.folderUrl + encodeSegment(new.base + suffix)) }
     }
 }

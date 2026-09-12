@@ -60,7 +60,10 @@ class Prefs(context: Context) {
         language = sp.getString("language", deviceLanguage()) ?: deviceLanguage(),
         kind = sp.getString("kind", "memo") ?: "memo",
         fetchCleaned = sp.getBoolean("fetch_cleaned", true),
-        processing = sp.getString("processing", "phone") ?: "phone",
+        // "cloud" only exists in the private build; a stored value from elsewhere falls back to the phone.
+        processing = (sp.getString("processing", "phone") ?: "phone").let {
+            if (it == "cloud" && !com.freedomfighter.readersrecorder.BuildConfig.PRIVATE) "phone" else it
+        },
         model = sp.getString("model", "normal") ?: "normal",
         cleanOnPhone = sp.getBoolean("clean_on_phone", true)
     )
