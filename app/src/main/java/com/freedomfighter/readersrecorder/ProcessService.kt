@@ -72,7 +72,7 @@ class ProcessService : Service() {
         try {
             while (!cancelled.get()) {
                 val s = app.prefs.settings.value
-                val r = app.store.recordings.value.firstOrNull { it.durationMs > 0 && !it.transcribed && it.error.isBlank() && it.mode(s.processing) == "phone" && it.id != RecordService.Live.id } ?: break
+                val r = app.store.recordings.value.firstOrNull { needsWork(it, s) && it.id != RecordService.Live.id } ?: break
                 Live.id = r.id; Live.percent = 0
                 try {
                     withContext(Dispatchers.Default) { processOne(app, r, s.language, s.model) }
@@ -131,7 +131,6 @@ class ProcessService : Service() {
         }
     }
 
-
     private fun finish() {
         running = false
         stopForeground(STOP_FOREGROUND_REMOVE)
@@ -187,11 +186,15 @@ class ProcessService : Service() {
             else -> ctx.getString(R.string.phase_waiting)
         }
 
+        /** What is left to do on a recording: transcribe it, here on the phone. */
+        fun needsWork(r: Recording, s: com.freedomfighter.readersrecorder.data.Settings): Boolean =
+            !r.transcribed && r.durationMs > 0 && r.error.isBlank() && r.mode(s.processing) == "phone"
+
         /** Start the queue if the phone is the transcriber and something waits. */
         fun kick(ctx: Context) {
             val app = ctx.applicationContext as App
-            val default = app.prefs.settings.value.processing
-            if (app.store.recordings.value.none { it.durationMs > 0 && !it.transcribed && it.error.isBlank() && it.mode(default) == "phone" }) return
+            val s = app.prefs.settings.value
+            if (app.store.recordings.value.none { needsWork(it, s) }) return
             ContextCompat.startForegroundService(ctx, Intent(ctx, ProcessService::class.java))
         }
         fun cancel(ctx: Context) = ctx.startService(Intent(ctx, ProcessService::class.java).setAction(ACTION_CANCEL))

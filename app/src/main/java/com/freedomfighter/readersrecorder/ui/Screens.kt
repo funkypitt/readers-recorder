@@ -306,6 +306,13 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
                 }
                 Rule(Modifier.padding(top = 10.dp))
                 // ---- transcript ----
+                // The main points first, when the worker wrote them: they are what one comes back for.
+                val points = remember(r.id, transcript) { app.store.summary(r) }
+                if (points.isNotBlank()) {
+                    Small(stringResource(R.string.summary_title), Modifier.padding(horizontal = rowPadH).padding(top = 16.dp))
+                    T(points, Modifier.padding(horizontal = rowPadH, vertical = 8.dp), size = typo.title, align = TextAlign.Start, lineHeightMul = 1.4f)
+                    Rule(Modifier.padding(vertical = 8.dp))
+                }
                 when {
                     transcript.isNotBlank() -> T(transcript, Modifier.padding(horizontal = rowPadH, vertical = 16.dp), size = typo.title, align = TextAlign.Start, lineHeightMul = 1.4f)
                     ProcessService.Live.id == r.id -> Small(ProcessService.phaseLabel(context, ProcessService.Live.phase, ProcessService.Live.percent), Modifier.padding(horizontal = rowPadH, vertical = 16.dp), maxLines = 3)

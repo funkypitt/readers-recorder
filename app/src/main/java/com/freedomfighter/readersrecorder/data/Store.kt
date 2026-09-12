@@ -110,12 +110,17 @@ class Store(context: Context) {
     fun playable(r: Recording): File = cleanAudio(r).takeIf { r.cleaned && it.exists() } ?: audio(r)
     fun transcriptFile(r: Recording): File = File(dir, "${r.id}.txt")
     fun transcript(r: Recording): String = transcriptFile(r).takeIf { it.exists() }?.readText() ?: ""
+    /** The summary lives beside the transcript; its presence is the only record that it exists,
+     *  so an older index needs no migration and a deleted file simply means "no summary". */
+    fun summaryFile(r: Recording): File = File(dir, "${r.id}.resume.txt")
+    fun summary(r: Recording): String = summaryFile(r).takeIf { it.exists() }?.readText() ?: ""
+    fun setSummary(r: Recording, text: String) { summaryFile(r).writeText(text) }
 
     fun add(r: Recording) = save(_recordings.value.filterNot { it.id == r.id } + r)
     fun update(r: Recording) = save(_recordings.value.map { if (it.id == r.id) r else it })
     fun update(id: String, f: (Recording) -> Recording) { get(id)?.let { update(f(it)) } }
     fun delete(id: String) {
-        get(id)?.let { r -> audio(r).delete(); cleanTarget(r, "m4a").delete(); cleanTarget(r, "mp3").delete(); transcriptFile(r).delete(); segmentsFile(r).delete() }
+        get(id)?.let { r -> audio(r).delete(); cleanTarget(r, "m4a").delete(); cleanTarget(r, "mp3").delete(); transcriptFile(r).delete(); segmentsFile(r).delete(); summaryFile(r).delete() }
         save(_recordings.value.filterNot { it.id == id })
     }
     /** Save the transcript; an automatic title becomes its first words. */

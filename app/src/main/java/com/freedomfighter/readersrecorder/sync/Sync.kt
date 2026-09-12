@@ -50,14 +50,22 @@ object Sync {
         // ---- down ----
         // Only the private build expects anything back: the workstation's transcript, cleaned audio
         // and summary. The public build's folder is an export and nothing is ever fetched from it.
+        // A summary is written after the transcript, and can appear long after it: a recording
+        // stays on the list until its points are here, otherwise they would never be fetched.
         val waiting = if (!BuildConfig.PRIVATE) emptyList() else
-            store.recordings.value.filter { it.mode(s.processing) == "cloud" && it.uploaded && (!it.transcribed || (s.fetchCleaned && !it.cleaned)) }
+            store.recordings.value.filter {
+                it.mode(s.processing) == "cloud" && it.uploaded &&
+                    (!it.transcribed || (s.fetchCleaned && !it.cleaned) || !store.summaryFile(it).exists())
+            }
         if (waiting.isNotEmpty()) {
             val names = dav.list(folder).map { it.name }.toSet()
             for (r in waiting) {
                 try {
                     if (!r.transcribed && r.base + ".txt" in names) {
                         store.setTranscript(r, dav.get(folder + encodeSegment(r.base + ".txt"))); tr++
+                    }
+                    if (!store.summaryFile(r).exists() && r.base + ".resume.txt" in names) {
+                        store.setSummary(r, dav.get(folder + encodeSegment(r.base + ".resume.txt")))
                     }
                     if (s.fetchCleaned && !r.cleaned && r.base + "_nettoye.mp3" in names) {
                         if (dav.download(folder + encodeSegment(r.base + "_nettoye.mp3"), store.cleanTarget(r, "mp3"))) { store.update(r.id) { it.copy(cleaned = true) }; cl++ }
