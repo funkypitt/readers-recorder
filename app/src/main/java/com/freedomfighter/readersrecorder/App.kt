@@ -24,6 +24,8 @@ class App : Application() {
     private val syncLock = Mutex()
     /** One line for the status row: "syncing…", "synced 21:03", or the error. */
     val status = MutableStateFlow("")
+    /** Empty, or why the model that writes the main points could not be fetched. */
+    val modelError = MutableStateFlow("")
     val syncing = MutableStateFlow(false)
 
     override fun onCreate() {
@@ -37,16 +39,9 @@ class App : Application() {
      */
     fun fetchSummaryModel() {
         if (com.freedomfighter.readersrecorder.summary.SummaryModel.downloading.value >= 0) return
-        scope.launch {
-            status.value = try {
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    com.freedomfighter.readersrecorder.summary.SummaryModel.download(this@App)
-                }
-                prefs.setSummaryOnPhone(true)
-                ProcessService.kick(this@App)
-                ""
-            } catch (e: Exception) { e.message ?: "model download failed" }
-        }
+        // In the processing service, not here: two gigabytes take minutes, and a coroutine of the
+        // application does not survive the user leaving the screen.
+        ProcessService.fetchModel(this)
     }
 
     /** Upload what is new, fetch transcripts and cleaned audio that have appeared. */

@@ -74,6 +74,7 @@
     <string name="processing_off">nobody</string>
     <string name="model">model on the phone (bigger = better, slower)</string>
     <string name="model_not_yet">fetched at first use</string>
+    <string name="model_resume">%d%% already down · tap to carry on</string>
     <string name="clean_on_phone">also make a cleaned copy (volume, rumble)</string>
     <string name="channel_processing">transcription</string>
     <string name="phase_model">fetching the model · %1$d%%</string>

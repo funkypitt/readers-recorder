@@ -54,6 +54,8 @@ class ProcessService : Service() {
     private val cancelled = AtomicBoolean(false)
     private var lock: PowerManager.WakeLock? = null
     private var running = false
+    /** Asked for by the settings row: fetch the model that writes the main points. */
+    private val wantModel = AtomicBoolean(false)
     /** Recordings whose summary failed while this service was up: not tried again before it restarts. */
     private val summaryFailedHere = mutableSetOf<String>()
 
@@ -63,7 +65,10 @@ class ProcessService : Service() {
         goForeground()
         when (intent?.action) {
             ACTION_CANCEL -> { cancelled.set(true); WhisperLib.cancel() }
-            else -> if (!running) { running = true; scope.launch { work(); finish() } }
+            else -> {
+                if (intent?.action == ACTION_FETCH_MODEL) wantModel.set(true)
+                if (!running) { running = true; scope.launch { work(); finish() } }
+            }
         }
         return START_NOT_STICKY
     }
@@ -75,6 +80,7 @@ class ProcessService : Service() {
         val ticker = scope.launch { while (isActive) { pushNotification(); delay(1500) } }
         try {
             while (!cancelled.get()) {
+                if (wantModel.compareAndSet(true, false)) { fetchSummaryModel(app); continue }
                 val s = app.prefs.settings.value
                 val r = app.store.recordings.value.firstOrNull {
                     needsWork(app, it, s) && it.id != RecordService.Live.id && it.id !in summaryFailedHere
@@ -91,6 +97,28 @@ class ProcessService : Service() {
             Live.id = ""; Live.phase = ""; Live.percent = 0
             runCatching { if (lock?.isHeld == true) lock?.release() }
             app.sync()
+        }
+    }
+
+    /**
+     * The two gigabytes of the model that writes the points, fetched here rather than in a
+     * coroutine of the application: such a coroutine dies with the process, and Android ends a
+     * backgrounded process long before a download of this size is over. Under the service's
+     * notification and wake lock the phone stays on it, and an interrupted download carries on
+     * from where it stopped.
+     */
+    private suspend fun fetchSummaryModel(app: App) {
+        Live.id = ""; Live.phase = "model"; Live.percent = 0
+        app.modelError.value = ""
+        try {
+            withContext(Dispatchers.IO) {
+                SummaryModel.download(this@ProcessService, { Live.percent = it.coerceIn(0, 100) }, { cancelled.get() })
+            }
+            if (SummaryModel.isDownloaded(this)) app.prefs.setSummaryOnPhone(true)
+        } catch (e: Exception) {
+            if (!cancelled.get()) app.modelError.value = (e.message ?: e.javaClass.simpleName).take(120)
+        } finally {
+            Live.phase = ""; Live.percent = 0
         }
     }
 
@@ -234,6 +262,7 @@ class ProcessService : Service() {
 
     companion object {
         const val ACTION_CANCEL = "com.freedomfighter.readersrecorder.PROCESS_CANCEL"
+        const val ACTION_FETCH_MODEL = "com.freedomfighter.readersrecorder.FETCH_SUMMARY_MODEL"
         private const val CHUNK_SECONDS = 300
         private const val CHANNEL_ID = "processing"
         private const val NOTIF_ID = 2
@@ -267,6 +296,10 @@ class ProcessService : Service() {
             if (app.store.recordings.value.none { needsWork(app, it, s) }) return
             ContextCompat.startForegroundService(ctx, Intent(ctx, ProcessService::class.java))
         }
+        /** Fetch the model that writes the points, under the notification and the wake lock. */
+        fun fetchModel(ctx: Context) = ContextCompat.startForegroundService(ctx,
+            Intent(ctx, ProcessService::class.java).setAction(ACTION_FETCH_MODEL))
+
         fun cancel(ctx: Context) = ctx.startService(Intent(ctx, ProcessService::class.java).setAction(ACTION_CANCEL))
     }
 }

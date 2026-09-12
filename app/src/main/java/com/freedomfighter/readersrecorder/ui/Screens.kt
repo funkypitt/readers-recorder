@@ -162,7 +162,9 @@ fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
             }
             Small(
                 when {
-                    ProcessService.Live.id.isNotBlank() -> ProcessService.phaseLabel(LocalContext.current, ProcessService.Live.phase, ProcessService.Live.percent)
+                    // phase without an id: the summary model being fetched, which belongs to no recording
+                    ProcessService.Live.id.isNotBlank() || ProcessService.Live.phase.isNotBlank() ->
+                        ProcessService.phaseLabel(LocalContext.current, ProcessService.Live.phase, ProcessService.Live.percent)
                     settings.configured -> status.ifBlank { stringResource(R.string.synced_folder, settings.folder) }
                     else -> stringResource(R.string.local_only_phone)
                 },
@@ -414,7 +416,7 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
                 if (s.processing == "phone") {
                     val m = Models.byKey(s.model)
                     val downloading by Models.downloading.collectAsState()
-                    val state = when { Models.isDownloaded(context, m) -> ""; downloading >= 0 -> " · $downloading%"; else -> " · " + stringResource(R.string.model_not_yet) }
+                    val state = when { Models.isDownloaded(context, m) -> ""; downloading >= 0 -> " · " + stringResource(R.string.phase_model, downloading); else -> " · " + stringResource(R.string.model_not_yet) }
                     TextRow(stringResource(if (m == Models.HIGH) R.string.quality_high else R.string.quality_normal), secondary = stringResource(R.string.quality) + " · " + m.mb + " MB" + state) {
                         app.prefs.setModel(if (m == Models.HIGH) Models.NORMAL.key else Models.HIGH.key)
                     }
@@ -425,18 +427,33 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
                     val roomy = remember { SummaryModel.phoneCanHoldIt(context) }
                     val fetching by SummaryModel.downloading.collectAsState()
                     val here = remember(fetching) { SummaryModel.isDownloaded(context) }
+                    val part = remember(fetching) { SummaryModel.partPercent(context) }
+                    val modelFailed by app.modelError.collectAsState()
                     if (!roomy) {
                         TextRow(stringResource(R.string.off), secondary = stringResource(R.string.summary_on_phone) + " · " +
                             stringResource(R.string.summary_needs_memory, SummaryModel.phoneMemoryGb(context)))
                     } else {
                         val summaryState = when {
-                            fetching >= 0 -> " · $fetching%"
-                            !here -> " · " + stringResource(R.string.model_not_yet)
-                            else -> ""
+                            here || fetching >= 0 || part > 0 -> ""
+                            else -> " · " + stringResource(R.string.model_not_yet)
                         }
                         TextRow(
-                            if (s.summaryOnPhone && here) stringResource(R.string.on) else stringResource(R.string.off),
-                            secondary = stringResource(R.string.summary_on_phone) + " · " + SummaryModel.MB + " MB" + summaryState,
+                            // While it downloads the progress takes the place of on/off: in the
+                            // second line, after the label and the size, it was cut off the row.
+                            when {
+                                fetching >= 0 -> stringResource(R.string.phase_model, fetching)
+                                s.summaryOnPhone && here -> stringResource(R.string.on)
+                                else -> stringResource(R.string.off)
+                            },
+                            // A failed fetch says why, in the place of the label: it used to fail
+                            // in silence, with nothing on the screen the user had just tapped.
+                            // The failure, or what a cut download already got, takes the whole
+                            // line: after the label and the size they were cut off the row.
+                            secondary = when {
+                                !here && modelFailed.isNotBlank() -> modelFailed
+                                !here && fetching < 0 && part > 0 -> stringResource(R.string.model_resume, part)
+                                else -> stringResource(R.string.summary_on_phone) + " · " + SummaryModel.MB + " MB" + summaryState
+                            },
                         ) {
                             if (here) { app.prefs.setSummaryOnPhone(!s.summaryOnPhone); if (!s.summaryOnPhone) ProcessService.kick(context) }
                             else app.fetchSummaryModel()

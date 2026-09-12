@@ -72,6 +72,7 @@
     <string name="processing_off">никто</string>
     <string name="model">модель на телефоне (больше = лучше, медленнее)</string>
     <string name="model_not_yet">загружается при первом использовании</string>
+    <string name="model_resume">загружено %d%% · нажмите, чтобы продолжить</string>
     <string name="clean_on_phone">также делать очищенную копию (громкость, гул)</string>
     <string name="channel_processing">расшифровка</string>
     <string name="phase_model">загрузка модели · %1$d%%</string>

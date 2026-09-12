@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
+import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -21,8 +22,8 @@ import java.net.URL
 object SummaryModel {
     const val FILE = "qwen2.5-3b-instruct-q4_k_m.gguf"
     const val URL_STR = "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/$FILE"
-    const val MB = 1930                     // 1.93 GB as the server reports it
-    private const val NEEDED_BYTES = 2_100_000_000L
+    const val MB = 2105                     // 2 104 932 768 bytes, as the server reports it
+    private const val NEEDED_BYTES = 2_200_000_000L
 
     /**
      * A phone small enough that loading two gigabytes of weights would get the application killed
@@ -61,29 +62,37 @@ object SummaryModel {
     fun remove(ctx: Context): Boolean = file(ctx).delete()
 
     /**
-     * Fetch the model. A cut download is thrown away rather than kept half-written — a truncated
-     * GGUF loads for a while and then fails deep inside the native code, where the error means
-     * nothing to anyone.
+     * Fetch the model, carrying on from an interrupted attempt rather than starting again: two
+     * gigabytes over a phone connection get cut, and a download that always restarts from zero
+     * is a download that never finishes. The half-file is kept for the next try; only a complete
+     * one is renamed into place, so a truncated GGUF is never loaded.
      */
-    fun download(ctx: Context, onProgress: (Int) -> Unit = {}) {
+    fun download(ctx: Context, onProgress: (Int) -> Unit = {}, cancelled: () -> Boolean = { false }) {
         val target = file(ctx)
         if (isDownloaded(ctx)) return
-        if (dir(ctx).usableSpace < NEEDED_BYTES)
-            throw IllegalStateException("not enough space: ${NEEDED_BYTES / 1_000_000} MB needed")
-
         val tmp = File(target.parentFile, "$FILE.part")
+        var have = if (tmp.exists()) tmp.length() else 0L
+        if (dir(ctx).usableSpace < NEEDED_BYTES - have)
+            throw IllegalStateException("not enough space: ${(NEEDED_BYTES - have) / 1_000_000} MB needed")
+
         downloading.value = 0
         try {
             val c = URL(URL_STR).openConnection() as HttpURLConnection
             c.instanceFollowRedirects = true; c.connectTimeout = 20_000; c.readTimeout = 60_000
             c.setRequestProperty("User-Agent", "readers-recorder")
+            if (have > 0) c.setRequestProperty("Range", "bytes=$have-")
             if (c.responseCode >= 400) throw IllegalStateException("summary model: HTTP ${c.responseCode}")
-            val total = c.contentLengthLong
-            var done = 0L
+            // 206: the server picks up where we stopped. Anything else means it sent the whole
+            // file again, so what is already on disk is worthless and the part starts over.
+            val resuming = c.responseCode == 206
+            if (!resuming) have = 0L
+            val total = c.contentLengthLong.let { if (it > 0) it + have else -1L }
+            var done = have
             c.inputStream.use { i ->
-                tmp.outputStream().use { o ->
+                FileOutputStream(tmp, resuming).use { o ->
                     val buf = ByteArray(512 * 1024); var last = -1
                     while (true) {
+                        if (cancelled()) return
                         val n = i.read(buf); if (n < 0) break
                         o.write(buf, 0, n); done += n
                         val pct = if (total > 0) (done * 100 / total).toInt() else 0
@@ -93,6 +102,12 @@ object SummaryModel {
             }
             if (total > 0 && done != total) throw IllegalStateException("summary model: download cut short")
             if (!tmp.renameTo(target)) { target.delete(); tmp.renameTo(target) }
-        } finally { downloading.value = -1; tmp.delete() }
+        } finally { downloading.value = -1 }
     }
+
+    /** Bytes already down from an interrupted attempt, for the sentence that offers to carry on. */
+    fun partBytes(ctx: Context): Long = File(dir(ctx), "$FILE.part").let { if (it.exists()) it.length() else 0L }
+
+    /** How much of the model an interrupted attempt already brought down, 0 when there is none. */
+    fun partPercent(ctx: Context): Int = (partBytes(ctx) * 100 / (MB * 1_000_000L)).toInt().coerceIn(0, 99)
 }

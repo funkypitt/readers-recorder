@@ -72,6 +72,7 @@
     <string name="processing_off">ninguém</string>
     <string name="model">modelo no telemóvel (maior = melhor, mais lento)</string>
     <string name="model_not_yet">descarregado na primeira utilização</string>
+    <string name="model_resume">%d%% já descarregado · toca para continuar</string>
     <string name="clean_on_phone">fazer também uma cópia limpa (volume, zumbido)</string>
     <string name="channel_processing">transcrição</string>
     <string name="phase_model">a descarregar o modelo · %1$d%%</string>
