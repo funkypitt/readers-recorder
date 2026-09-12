@@ -72,6 +72,7 @@
     <string name="processing_off">niemand</string>
     <string name="model">Modell auf dem Telefon (grösser = besser, langsamer)</string>
     <string name="model_not_yet">wird beim ersten Mal geladen</string>
+    <string name="model_shared">geteilt mit %s</string>
     <string name="model_resume">%d%% schon geladen · zum Fortsetzen tippen</string>
     <string name="clean_on_phone">auch eine bereinigte Kopie machen (Lautstärke, Brummen)</string>
     <string name="channel_processing">Transkription</string>

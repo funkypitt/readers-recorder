@@ -54,8 +54,8 @@ import com.freedomfighter.readersrecorder.data.TextSize
 import com.freedomfighter.readersrecorder.sync.Sync
 import com.freedomfighter.readersrecorder.ProcessService
 import com.freedomfighter.readersrecorder.PlayerService
-import com.freedomfighter.readersrecorder.summary.SummaryModel
-import com.freedomfighter.readersrecorder.whisper.Models
+import com.freedomfighter.readers.speech.summary.SummaryModel
+import com.freedomfighter.readers.speech.whisper.Models
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -427,6 +427,7 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
                     val roomy = remember { SummaryModel.phoneCanHoldIt(context) }
                     val fetching by SummaryModel.downloading.collectAsState()
                     val here = remember(fetching) { SummaryModel.isDownloaded(context) }
+                    val sharedFrom = remember(fetching) { SummaryModel.sharedFrom(context) }
                     val part = remember(fetching) { SummaryModel.partPercent(context) }
                     val modelFailed by app.modelError.collectAsState()
                     if (!roomy) {
@@ -452,6 +453,8 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
                             secondary = when {
                                 !here && modelFailed.isNotBlank() -> modelFailed
                                 !here && fetching < 0 && part > 0 -> stringResource(R.string.model_resume, part)
+                                // the model the other app already holds, read through it: nothing to fetch
+                                sharedFrom != null -> stringResource(R.string.summary_on_phone) + " · " + stringResource(R.string.model_shared, "Audio Player")
                                 else -> stringResource(R.string.summary_on_phone) + " · " + SummaryModel.MB + " MB" + summaryState
                             },
                         ) {

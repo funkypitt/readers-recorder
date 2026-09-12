@@ -8,8 +8,8 @@ plugins {
 // one adds what only this workstation can serve (cleaning and transcription by the computer
 // behind the WebDAV folder). Its version code stays 500 ahead, so a public release can never
 // land on the phone as an "update" and quietly take those features away.
-val baseVersionCode = 15
-val baseVersionName = "1.7.1"
+val baseVersionCode = 16
+val baseVersionName = "1.8.0"
 
 android {
     namespace = "com.freedomfighter.readersrecorder"
@@ -21,8 +21,6 @@ android {
         targetSdk = 34
         versionCode = baseVersionCode
         versionName = baseVersionName
-        ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
-        externalNativeBuild { cmake { arguments += listOf("-DGGML_NATIVE=OFF", "-DANDROID_STL=c++_static") } }
     }
 
     flavorDimensions += "audience"
@@ -44,14 +42,15 @@ android {
     }
 
     buildTypes { release { isMinifyEnabled = false } }
+    // Named here as well as in :speech: this is where the native libraries get stripped on packaging.
     ndkVersion = "27.1.12297006"
-    externalNativeBuild { cmake { path = file("src/main/cpp/CMakeLists.txt"); version = "3.22.1" } }
     buildFeatures { compose = true; buildConfig = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
 }
 
 dependencies {
+    implementation(project(":speech"))
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")

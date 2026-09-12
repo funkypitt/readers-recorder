@@ -18,20 +18,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.freedomfighter.readersrecorder.audio.Decode16k
+import com.freedomfighter.readers.speech.audio.Decode16k
 import com.freedomfighter.readersrecorder.audio.Normalize
-import com.freedomfighter.readersrecorder.audio.Pcm
-import com.freedomfighter.readersrecorder.audio.Resample
+import com.freedomfighter.readers.speech.audio.Pcm
+import com.freedomfighter.readers.speech.audio.Resample
 import com.freedomfighter.readersrecorder.data.Recording
-import com.freedomfighter.readersrecorder.summary.SummaryModel
-import com.freedomfighter.readersrecorder.summary.Summariser
-import com.freedomfighter.readersrecorder.whisper.Models
-import com.freedomfighter.readersrecorder.whisper.Paragraphs
-import com.freedomfighter.readersrecorder.whisper.Prompts
-import com.freedomfighter.readersrecorder.whisper.Segment
-import com.freedomfighter.readersrecorder.whisper.WhisperLib
-import com.freedomfighter.readersrecorder.whisper.WhisperSession
-import com.freedomfighter.readersrecorder.whisper.transcribe
+import com.freedomfighter.readers.speech.summary.SummaryModel
+import com.freedomfighter.readers.speech.summary.Summariser
+import com.freedomfighter.readers.speech.whisper.Models
+import com.freedomfighter.readers.speech.whisper.Paragraphs
+import com.freedomfighter.readers.speech.whisper.Prompts
+import com.freedomfighter.readers.speech.whisper.Segment
+import com.freedomfighter.readers.speech.whisper.WhisperLib
+import com.freedomfighter.readers.speech.whisper.WhisperSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -54,6 +53,7 @@ class ProcessService : Service() {
     private val cancelled = AtomicBoolean(false)
     private var lock: PowerManager.WakeLock? = null
     private var running = false
+    private var lastStartId = 0
     /** Asked for by the settings row: fetch the model that writes the main points. */
     private val wantModel = AtomicBoolean(false)
     /** Recordings whose summary failed while this service was up: not tried again before it restarts. */
@@ -62,12 +62,15 @@ class ProcessService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        lastStartId = startId
         goForeground()
         when (intent?.action) {
-            ACTION_CANCEL -> { cancelled.set(true); WhisperLib.cancel() }
+            ACTION_CANCEL -> { cancelled.set(true); WhisperLib.cancel(); if (!running) finish() }
             else -> {
                 if (intent?.action == ACTION_FETCH_MODEL) wantModel.set(true)
-                if (!running) { running = true; scope.launch { work(); finish() } }
+                // A stop used to leave `cancelled` set for the life of the instance, so work asked
+                // for right after it was dropped without a word. A new pass starts clean.
+                if (!running) { running = true; cancelled.set(false); scope.launch { work(); finish() } }
             }
         }
         return START_NOT_STICKY
@@ -96,6 +99,7 @@ class ProcessService : Service() {
             ticker.cancel()
             Live.id = ""; Live.phase = ""; Live.percent = 0
             runCatching { if (lock?.isHeld == true) lock?.release() }
+            running = false
             app.sync()
         }
     }
@@ -133,16 +137,18 @@ class ProcessService : Service() {
         // 1. the model, fetched once
         val model = Models.byKey(modelKey)
         if (!Models.isDownloaded(this, model)) {
-            Live.phase = "model"; Models.download(this, model) { Live.percent = it }
+            Live.phase = "model"; Models.download(this, model, onProgress = { Live.percent = it }, cancelled = { cancelled.get() })
             if (cancelled.get()) return
         }
+        // Ours, or the sibling app's copy by file descriptor: either way a path whisper reads.
+        val handle = Models.open(this, model) ?: error("model not here")
         // 2. transcribe the original in five-minute pieces, the model loaded once: memory stays
         //    flat whatever the length. Each piece gets the style sentence and the end of the one before.
         Live.phase = "transcribe"; Live.percent = 0
         val segments = ArrayList<Segment>()
         var detected = ""
         var aborted = false
-        WhisperSession(Models.file(this, model)).use { session ->
+        handle.use { WhisperSession(handle.path).use { session ->
             Decode16k.chunks(this, src, CHUNK_SECONDS) { pcm, startMs ->
                 if (cancelled.get()) { aborted = true; return@chunks false }
                 val chunkMs = pcm.size / 16L
@@ -155,7 +161,7 @@ class ProcessService : Service() {
                 segs.forEach { segments += it.copy(startMs = it.startMs + startMs, endMs = it.endMs + startMs) }
                 true
             }
-        }
+        } }
         if (aborted || cancelled.get()) return
         store.setTranscript(r, Paragraphs.build(segments, getString(R.string.no_speech)))
         store.writeSegments(r, segments, lang ?: detected)
@@ -199,15 +205,18 @@ class ProcessService : Service() {
             summaryFailedHere += r.id
             return
         }
+        val handle = SummaryModel.open(this) ?: run { summaryFailedHere += r.id; return }
         Live.phase = "summary"; Live.percent = 0
         app.store.countSummaryTry(r)
-        val points = Summariser.summarise(
-            model = SummaryModel.file(this),
-            transcript = text,
-            language = language,
-            onProgress = { Live.percent = it.coerceIn(0, 99) },
-            cancelled = { cancelled.get() },
-        )
+        val points = handle.use {
+            Summariser.summarise(
+                modelPath = it.path,
+                transcript = text,
+                language = language,
+                onProgress = { p -> Live.percent = p.coerceIn(0, 99) },
+                cancelled = { cancelled.get() },
+            )
+        }
         if (points != null && !cancelled.get()) {
             app.store.setSummary(r, points)
             app.store.update(r.id) { it.copy(summaryTries = 0) }   // done: nothing left to count
@@ -220,9 +229,9 @@ class ProcessService : Service() {
     }
 
     private fun finish() {
-        running = false
+        if (running) return   // a start that arrived as the pass was ending has relaunched it
         stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
+        stopSelfResult(lastStartId)
     }
 
     override fun onDestroy() { scope.cancel(); runCatching { if (lock?.isHeld == true) lock?.release() }; super.onDestroy() }
@@ -285,7 +294,11 @@ class ProcessService : Service() {
         fun needsWork(app: App, r: Recording, s: com.freedomfighter.readersrecorder.data.Settings): Boolean {
             if (r.durationMs <= 0 || r.error.isNotBlank() || r.mode(s.processing) != "phone") return false
             if (!r.transcribed) return true
-            return s.summaryOnPhone && r.summaryTries < Recording.MAX_SUMMARY_TRIES &&
+            // Turning the option on applies to what is recorded from then on; the fifty recordings
+            // already there are not summarised in one silent night of processor time. Any older one
+            // gets its points from its own menu, which asks for them by name.
+            return s.summaryOnPhone && (r.createdAt >= s.summarySince || r.summaryAsked) &&
+                r.summaryTries < Recording.MAX_SUMMARY_TRIES &&
                 SummaryModel.isDownloaded(app) && !app.store.summaryFile(r).exists()
         }
 

@@ -30,7 +30,7 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate(); prefs; store
-        Thread { runCatching { com.freedomfighter.readersrecorder.whisper.Models.cleanup(this) } }.start()
+        Thread { runCatching { com.freedomfighter.readers.speech.whisper.Models.cleanup(this) } }.start()
     }
 
     /**
@@ -38,7 +38,7 @@ class App : Application() {
      * the screen: it takes minutes, and it must survive the settings screen being left.
      */
     fun fetchSummaryModel() {
-        if (com.freedomfighter.readersrecorder.summary.SummaryModel.downloading.value >= 0) return
+        if (com.freedomfighter.readers.speech.summary.SummaryModel.downloading.value >= 0) return
         // In the processing service, not here: two gigabytes take minutes, and a coroutine of the
         // application does not survive the user leaving the screen.
         ProcessService.fetchModel(this)

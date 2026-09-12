@@ -1,0 +1,3 @@
+[submodule "speech"]
+	path = speech
+	url = https://github.com/funkypitt/readers-speech.git

@@ -72,6 +72,7 @@
     <string name="processing_off">personne</string>
     <string name="model">modèle sur le téléphone (plus gros = meilleur, plus lent)</string>
     <string name="model_not_yet">téléchargé à la première utilisation</string>
+    <string name="model_shared">partagé avec %s</string>
     <string name="model_resume">déjà téléchargé : %d %% — toucher pour continuer</string>
     <string name="clean_on_phone">faire aussi une copie nettoyée (volume, ronflement)</string>
     <string name="channel_processing">transcription</string>

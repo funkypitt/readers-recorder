@@ -139,11 +139,15 @@ worker/install.sh        # systemd user service, 60 s polling
 ## Building the app
 
 ```
+git clone --recursive https://github.com/funkypitt/readers-recorder.git   # or: git submodule update --init
 export JAVA_HOME=/path/to/jdk-21
-./gradlew assembleDebug
+./gradlew assemblePubliqueDebug
 ```
 
-minSdk 26, targetSdk 34. MIT.
+minSdk 26, targetSdk 34. MIT. Whisper, the summary model and the code around them are the
+[readers-speech](https://github.com/funkypitt/readers-speech) module, a git submodule at `speech/`
+shared with Reader's Audio Player — and the model files are shared too: a model downloaded by
+either app is read by the other through a content provider, nothing is downloaded twice.
 
 ## Crédits / Credits
 

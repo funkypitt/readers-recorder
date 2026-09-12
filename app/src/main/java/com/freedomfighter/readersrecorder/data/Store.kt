@@ -37,7 +37,9 @@ data class Recording(
      * otherwise be started again for ever — which is exactly what happened the first time this
      * was built. Past [MAX_SUMMARY_TRIES] the recording is simply left alone.
      */
-    val summaryTries: Int = 0
+    val summaryTries: Int = 0,
+    /** Asked for by hand from the recording's menu: summarised even though it predates the option. */
+    val summaryAsked: Boolean = false
 ) {
     /** The date and time, shown small under the title. */
     val whenLabel: String get() = defaultTitle(createdAt)
@@ -90,7 +92,7 @@ class Store(context: Context) {
                 o.optBoolean("uploaded"), o.optBoolean("cleaned"), o.optBoolean("transcribed"), o.optString("error"), o.optString("via"),
                 // older entries: a title that is not the date was typed by hand
                 o.optBoolean("named", o.optString("title").let { it.isNotBlank() && it != Recording.defaultTitle(o.getLong("createdAt")) }),
-                o.optInt("summaryTries"))
+                o.optInt("summaryTries"), o.optBoolean("summaryAsked"))
         }.sortedByDescending { it.createdAt }
     }.getOrDefault(emptyList())
 
@@ -98,7 +100,7 @@ class Store(context: Context) {
         val arr = JSONArray()
         list.forEach { r ->
             arr.put(JSONObject().put("id", r.id).put("title", r.title).put("createdAt", r.createdAt).put("durationMs", r.durationMs).put("kind", r.kind)
-                .put("uploaded", r.uploaded).put("cleaned", r.cleaned).put("transcribed", r.transcribed).put("error", r.error).put("via", r.via).put("named", r.named).put("summaryTries", r.summaryTries))
+                .put("uploaded", r.uploaded).put("cleaned", r.cleaned).put("transcribed", r.transcribed).put("error", r.error).put("via", r.via).put("named", r.named).put("summaryTries", r.summaryTries).put("summaryAsked", r.summaryAsked))
         }
         val tmp = File(index.parentFile, "recordings.json.tmp")
         tmp.writeText(arr.toString())
@@ -112,7 +114,7 @@ class Store(context: Context) {
     fun cleanAudio(r: Recording): File = listOf("m4a", "mp3").map { File(dir, "${r.id}.clean.$it") }.firstOrNull { it.exists() } ?: File(dir, "${r.id}.clean.mp3")
     fun cleanTarget(r: Recording, ext: String): File = File(dir, "${r.id}.clean.$ext")
     fun segmentsFile(r: Recording): File = File(dir, "${r.id}.segments.json")
-    fun writeSegments(r: Recording, segments: List<com.freedomfighter.readersrecorder.whisper.Segment>, language: String) {
+    fun writeSegments(r: Recording, segments: List<com.freedomfighter.readers.speech.whisper.Segment>, language: String) {
         val arr = JSONArray(); segments.forEach { arr.put(JSONObject().put("start", it.startMs / 1000.0).put("end", it.endMs / 1000.0).put("text", it.text)) }
         segmentsFile(r).writeText(JSONObject().put("language", language).put("segments", arr).toString())
     }
@@ -127,8 +129,8 @@ class Store(context: Context) {
     fun setSummary(r: Recording, text: String) { summaryFile(r).writeText(text) }
     /** Count the attempt before making it, so a summary that kills the application still counts. */
     fun countSummaryTry(r: Recording) = update(r.id) { it.copy(summaryTries = it.summaryTries + 1) }
-    /** Ask for the points again on a recording that has used up its goes. */
-    fun retrySummary(r: Recording) = update(r.id) { it.copy(summaryTries = 0) }
+    /** Ask for the points by name: on a recording that used up its goes, or one older than the option. */
+    fun retrySummary(r: Recording) = update(r.id) { it.copy(summaryTries = 0, summaryAsked = true) }
 
     fun add(r: Recording) = save(_recordings.value.filterNot { it.id == r.id } + r)
     fun update(r: Recording) = save(_recordings.value.map { if (it.id == r.id) r else it })

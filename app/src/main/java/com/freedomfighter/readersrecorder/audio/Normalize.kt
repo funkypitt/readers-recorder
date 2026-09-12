@@ -1,6 +1,9 @@
 package com.freedomfighter.readersrecorder.audio
 
 import android.content.Context
+import com.freedomfighter.readers.speech.audio.Decoder
+import com.freedomfighter.readers.speech.audio.Pcm
+import com.freedomfighter.readers.speech.audio.Resample
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
