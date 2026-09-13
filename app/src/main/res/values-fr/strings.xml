@@ -109,7 +109,7 @@
     <string name="cloud_guide_export">Héberger les enregistrements sur kDrive (Infomaniak), pas à pas\n1. Ouvrez kDrive dans un navigateur. Son adresse web contient un numéro après /drive/ — par exemple ksuite.infomaniak.com/kdrive/app/drive/123456/… — ce numéro suffit à l\'app comme serveur.\n2. Identifiant : l\'e-mail avec lequel vous vous connectez chez Infomaniak.\n3. Mot de passe : votre mot de passe Infomaniak. Si la double authentification est active, créez plutôt un mot de passe d\'application (Manager Infomaniak → Sécurité → Mots de passe d\'application) et utilisez celui-là.\n4. L\'app crée un dossier Recordings à la racine de votre kDrive et y dépose chaque enregistrement, avec un petit fichier .json à côté. Renommez ou supprimez un enregistrement dans l\'app : le dossier suit.\n5. Chaque enregistrement est rejoint par sa transcription et sa copie nettoyée dès que le téléphone les a produites. Le dossier est un export : rien n\'en est jamais rapatrié.\nNextcloud et tout autre serveur WebDAV fonctionnent de même : indiquez l\'adresse https:// complète comme serveur.</string>
     <string name="summary_title">points principaux</string>
     <string name="phase_summary">rédaction des points principaux, %d %%</string>
-    <string name="summary_on_phone">écrire aussi les points principaux</string>
+    <string name="summary_on_phone">écrire aussi les points principaux (beta)</string>
     <string name="summary_needs_memory">ce téléphone a %d Go : pas assez</string>
-    <string name="summarise_now">écrire les points principaux</string>
+    <string name="summarise_now">écrire les points principaux (beta)</string>
 </resources>

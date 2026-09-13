@@ -109,7 +109,7 @@
     <string name="cloud_guide_export">Как хранить записи в kDrive (Infomaniak), шаг за шагом\n1. Откройте kDrive в браузере. В адресе после /drive/ стоит номер — например ksuite.infomaniak.com/kdrive/app/drive/123456/… — этого номера приложению достаточно как сервера.\n2. Имя пользователя: адрес почты, с которым вы входите в Infomaniak.\n3. Пароль: ваш пароль Infomaniak. При двухфакторном входе создайте пароль приложения (Infomaniak Manager → Безопасность → Пароли приложений).\n4. Приложение создаёт папку Recordings в корне kDrive и кладёт туда каждую запись с небольшим файлом .json рядом. Переименование или удаление в приложении повторяется в папке.\n5. Расшифровка и очищенная копия добавляются, как только телефон их сделает. Папка — это выгрузка: оттуда ничего никогда не забирается.\nNextcloud и любой другой сервер WebDAV работают так же: укажите полный адрес https:// как сервер.</string>
     <string name="summary_title">основные пункты</string>
     <string name="phase_summary">записываю основные мысли, %d %%</string>
-    <string name="summary_on_phone">записывать и основные мысли</string>
+    <string name="summary_on_phone">записывать и основные мысли (beta)</string>
     <string name="summary_needs_memory">в телефоне %d ГБ: этого мало</string>
-    <string name="summarise_now">записать основные мысли</string>
+    <string name="summarise_now">записать основные мысли (beta)</string>
 </resources>
