@@ -112,4 +112,11 @@
     <string name="summary_on_phone">auch die wichtigsten Punkte schreiben (beta)</string>
     <string name="summary_needs_memory">dieses Telefon hat %d GB: zu wenig</string>
     <string name="summarise_now">die wichtigsten Punkte schreiben (beta)</string>
+    <string name="export_credentials">Zugangsdaten exportieren</string>
+    <string name="export_credentials_hint">eine Datei, um ein anderes Gerät oder die Desktop-Apps einzurichten — sie enthält das Passwort</string>
+    <string name="import_credentials">Zugangsdaten importieren</string>
+    <string name="credentials_imported">Zugangsdaten importiert</string>
+    <string name="credentials_imported_from">Server und Login aus %1$s übernommen</string>
+    <string name="credentials_not_a_file">keine Reader\'s-Zugangsdatendatei</string>
+    <string name="credentials_nothing">diese Datei enthält nichts für %1$s</string>
 </resources>

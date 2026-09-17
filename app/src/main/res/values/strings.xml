@@ -114,4 +114,11 @@
     <string name="summary_on_phone">also write the main points (beta)</string>
     <string name="summary_needs_memory">this phone has %d GB: not enough</string>
     <string name="summarise_now">write the main points (beta)</string>
+    <string name="export_credentials">export credentials</string>
+    <string name="export_credentials_hint">a file to set up another device or the desktop apps — it holds the password</string>
+    <string name="import_credentials">import credentials</string>
+    <string name="credentials_imported">credentials imported</string>
+    <string name="credentials_imported_from">server and login taken from %1$s</string>
+    <string name="credentials_not_a_file">not a Reader\'s credentials file</string>
+    <string name="credentials_nothing">this file holds nothing for %1$s</string>
 </resources>

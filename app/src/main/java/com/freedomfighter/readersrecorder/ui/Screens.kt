@@ -47,6 +47,8 @@ import com.freedomfighter.readersrecorder.App
 import com.freedomfighter.readersrecorder.MainActivity
 import com.freedomfighter.readersrecorder.R
 import com.freedomfighter.readersrecorder.RecordService
+import com.freedomfighter.readersrecorder.data.Credentials
+import com.freedomfighter.readersrecorder.data.CredentialsShare
 import com.freedomfighter.readersrecorder.data.FontChoice
 import com.freedomfighter.readersrecorder.data.Prefs
 import com.freedomfighter.readersrecorder.data.Recording
@@ -383,6 +385,24 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
     // The cloud folder is set up as one chain of three questions: server, username, password; then it is tried at once.
     var prompt by remember { mutableStateOf<String?>(if (setup && !s.configured) "server" else null) }
     var draft by remember { mutableStateOf(Triple(s.server, s.username, s.password)) }
+    var credMessage by remember { mutableStateOf("") }
+    val notCredentials = stringResource(R.string.credentials_not_a_file)
+    val nothingForUs = stringResource(R.string.credentials_nothing, stringResource(R.string.app_name))
+    val imported = stringResource(R.string.credentials_imported)
+    val importedFrom = stringResource(R.string.credentials_imported_from, "Reader's Notes")
+    val pick = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        credMessage = try {
+            val got = Credentials.read(CredentialsShare.readText(context, uri))
+            val a = got.account; val cur = app.prefs.settings.value
+            // the same as answering the three questions by hand, then a sync
+            app.prefs.setAccount(a.server ?: cur.server, a.folder ?: cur.folder, a.username ?: cur.username, a.password ?: cur.password)
+            app.sync()
+            if (got.fromFallback) importedFrom else imported
+        } catch (e: Credentials.NotCredentials) { notCredentials
+        } catch (e: Credentials.NothingForUs) { nothingForUs
+        } catch (e: Exception) { e.message ?: notCredentials }
+    }
     BackHandler { nav.pop() }
     Page {
         Column(Modifier.fillMaxSize()) {
@@ -403,6 +423,14 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
                     TextRow(stringResource(R.string.forget_server), size = typo.title) { app.prefs.setAccount("", s.folder, "", ""); app.prefs.setProcessing("phone") }
                     TextRow(stringResource(R.string.cloud_how), size = typo.title) { guide = !guide }
                     if (guide) Small(stringResource(if (com.freedomfighter.readersrecorder.BuildConfig.PRIVATE) R.string.cloud_guide else R.string.cloud_guide_export), Modifier.padding(horizontal = rowPadH).padding(bottom = 10.dp), maxLines = 40)
+                }
+                val shareTitle = stringResource(R.string.export_credentials)
+                if (s.configured) TextRow(shareTitle, secondary = stringResource(R.string.export_credentials_hint)) {
+                    CredentialsShare.share(context, Credentials.build(s.server, s.folder, s.username, s.password), shareTitle)
+                }
+                TextRow(stringResource(R.string.import_credentials), secondary = credMessage.ifBlank { null }, size = typo.title) {
+                    credMessage = ""
+                    pick.launch(arrayOf("application/json", "text/plain", "application/octet-stream", "*/*"))
                 }
                 Rule(Modifier.padding(vertical = 8.dp))
                 // Who does the work: the phone itself (whisper.cpp), the computer behind the cloud folder, or nobody.

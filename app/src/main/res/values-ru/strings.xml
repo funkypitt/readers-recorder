@@ -112,4 +112,11 @@
     <string name="summary_on_phone">записывать и основные мысли (beta)</string>
     <string name="summary_needs_memory">в телефоне %d ГБ: этого мало</string>
     <string name="summarise_now">записать основные мысли (beta)</string>
+    <string name="export_credentials">экспортировать учётные данные</string>
+    <string name="export_credentials_hint">файл для настройки другого устройства или настольных приложений — в нём пароль</string>
+    <string name="import_credentials">импортировать учётные данные</string>
+    <string name="credentials_imported">учётные данные импортированы</string>
+    <string name="credentials_imported_from">сервер и логин взяты из %1$s</string>
+    <string name="credentials_not_a_file">это не файл учётных данных Reader\'s</string>
+    <string name="credentials_nothing">в этом файле нет ничего для %1$s</string>
 </resources>

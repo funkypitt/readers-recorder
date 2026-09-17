@@ -30,6 +30,7 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate(); prefs; store
+        com.freedomfighter.readersrecorder.data.CredentialsShare.cleanUp(this)   // a leftover export holds the password
         Thread { runCatching { com.freedomfighter.readers.speech.whisper.Models.cleanup(this) } }.start()
     }
 

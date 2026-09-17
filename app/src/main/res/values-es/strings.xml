@@ -112,4 +112,11 @@
     <string name="summary_on_phone">escribir también los puntos principales (beta)</string>
     <string name="summary_needs_memory">este teléfono tiene %d GB: no basta</string>
     <string name="summarise_now">escribir los puntos principales (beta)</string>
+    <string name="export_credentials">exportar credenciales</string>
+    <string name="export_credentials_hint">un archivo para configurar otro dispositivo o las apps de escritorio — contiene la contraseña</string>
+    <string name="import_credentials">importar credenciales</string>
+    <string name="credentials_imported">credenciales importadas</string>
+    <string name="credentials_imported_from">servidor y usuario tomados de %1$s</string>
+    <string name="credentials_not_a_file">no es un archivo de credenciales Reader\'s</string>
+    <string name="credentials_nothing">este archivo no contiene nada para %1$s</string>
 </resources>

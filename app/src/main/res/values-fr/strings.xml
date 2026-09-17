@@ -112,4 +112,11 @@
     <string name="summary_on_phone">écrire aussi les points principaux (beta)</string>
     <string name="summary_needs_memory">ce téléphone a %d Go : pas assez</string>
     <string name="summarise_now">écrire les points principaux (beta)</string>
+    <string name="export_credentials">exporter les identifiants</string>
+    <string name="export_credentials_hint">un fichier pour configurer un autre appareil ou les apps de bureau — il contient le mot de passe</string>
+    <string name="import_credentials">importer les identifiants</string>
+    <string name="credentials_imported">identifiants importés</string>
+    <string name="credentials_imported_from">serveur et identifiants repris de %1$s</string>
+    <string name="credentials_not_a_file">ce n\'est pas un fichier d\'identifiants Reader\'s</string>
+    <string name="credentials_nothing">ce fichier ne contient rien pour %1$s</string>
 </resources>

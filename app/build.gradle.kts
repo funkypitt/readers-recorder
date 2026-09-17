@@ -8,8 +8,8 @@ plugins {
 // one adds what only this workstation can serve (cleaning and transcription by the computer
 // behind the WebDAV folder). Its version code stays 500 ahead, so a public release can never
 // land on the phone as an "update" and quietly take those features away.
-val baseVersionCode = 18
-val baseVersionName = "1.8.2"
+val baseVersionCode = 19
+val baseVersionName = "1.9.0"
 
 android {
     namespace = "com.freedomfighter.readersrecorder"
@@ -60,4 +60,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
+    testImplementation("junit:junit:4.13.2")
+    // org.json is only a stub in plain JVM tests
+    testImplementation("org.json:json:20240303")
 }
