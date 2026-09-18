@@ -79,6 +79,9 @@ class Nav {
     fun home() { while (stack.size > 1) stack.removeAt(stack.size - 1) }
 }
 
+/** What is advised here: short notes, where the careful model costs minutes and halves the mistakes. */
+private val RECOMMENDED = Models.HIGH
+
 @Composable
 fun kindLabel(kind: String): String = stringResource(when (kind) { "lecture" -> R.string.kind_lecture; "conversation" -> R.string.kind_conversation; else -> R.string.kind_memo })
 
@@ -442,11 +445,24 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
                     app.prefs.setProcessing(next); if (next == "phone") ProcessService.kick(context)
                 }
                 if (s.processing == "phone") {
-                    val m = Models.byKey(s.model)
+                    val chosen = Models.byKey(s.model)
                     val downloading by Models.downloading.collectAsState()
-                    val state = when { Models.isDownloaded(context, m) -> ""; downloading >= 0 -> " · " + stringResource(R.string.phase_model, downloading); else -> " · " + stringResource(R.string.model_not_yet) }
-                    TextRow(stringResource(if (m == Models.HIGH) R.string.quality_high else R.string.quality_normal), secondary = stringResource(R.string.quality) + " · " + m.mb + " MB" + state) {
-                        app.prefs.setModel(if (m == Models.HIGH) Models.NORMAL.key else Models.HIGH.key)
+                    // Two rows rather than one that switches, so the advice can stand beside the
+                    // option it is about. Here the recordings are notes of a few minutes: the
+                    // careful model costs minutes, not an afternoon, and halves the mistakes
+                    // (measured 2026-09-18: 10 to 11 % of words wrong against 4 to 5 %).
+                    Models.ALL.forEach { m ->
+                        val state = when { Models.isDownloaded(context, m) -> ""; downloading >= 0 -> " · " + stringResource(R.string.phase_model, downloading); else -> " · " + stringResource(R.string.model_not_yet) }
+                        val note = when {
+                            m == RECOMMENDED -> " · " + stringResource(R.string.recommended)
+                            m == Models.HIGH -> " · " + stringResource(R.string.quality_high_hint)
+                            else -> ""
+                        }
+                        TextRow(
+                            stringResource(if (m == Models.HIGH) R.string.quality_high else R.string.quality_normal),
+                            inverted = m == chosen,
+                            secondary = m.mb.toString() + " MB" + note + state,
+                        ) { app.prefs.setModel(m.key) }
                     }
                     TextRow(if (s.cleanOnPhone) stringResource(R.string.on) else stringResource(R.string.off), secondary = stringResource(R.string.clean_on_phone)) { app.prefs.setCleanOnPhone(!s.cleanOnPhone) }
                     // The summary needs a model of its own, two gigabytes of it: the row fetches it

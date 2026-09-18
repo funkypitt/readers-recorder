@@ -71,7 +71,7 @@
     <string name="processing_cloud">mein Computer, über den Cloud-Ordner</string>
     <string name="processing_off">niemand</string>
     <string name="model">Modell auf dem Telefon (grösser = besser, langsamer)</string>
-    <string name="model_not_yet">wird beim ersten Mal geladen</string>
+    <string name="model_not_yet">noch zu holen</string>
     <string name="model_shared">geteilt mit %s</string>
     <string name="model_resume">%d%% schon geladen · zum Fortsetzen tippen</string>
     <string name="clean_on_phone">auch eine bereinigte Kopie machen (Lautstärke, Brummen)</string>
@@ -103,8 +103,10 @@
     <string name="notif_playing">Wiedergabe</string>
     <string name="listen_empty">noch nichts aufgenommen</string>
     <string name="quality">Transkriptionsqualität</string>
-    <string name="quality_normal">normale Qualität</string>
-    <string name="quality_high">hohe Qualität (viel langsamer)</string>
+    <string name="recommended">empfohlen</string>
+    <string name="quality_high_hint">viermal langsamer</string>
+    <string name="quality_normal">gewöhnlich</string>
+    <string name="quality_high">sorgfältig</string>
     <string name="cloud_hint_export">Die Aufnahmen bleiben auf diesem Telefon, das sie selbst mit Whisper transkribiert (das Modell wird einmal geladen). Ein Cloud-Ordner ist optional (WebDAV: kDrive, Nextcloud…): Das Telefon legt dann jede Aufnahme dort ab, zusammen mit ihrer Transkription und ihrer bereinigten Hörfassung. Es ist ein Export — nichts kommt zurück. Nichts geht zu Google.</string>
     <string name="cloud_guide_export">Aufnahmen auf kDrive (Infomaniak) ablegen, Schritt für Schritt\n1. Öffnen Sie kDrive im Browser. Die Adresse enthält nach /drive/ eine Nummer — etwa ksuite.infomaniak.com/kdrive/app/drive/123456/… — diese Nummer genügt der App als Server.\n2. Benutzername: die E-Mail-Adresse Ihres Infomaniak-Kontos.\n3. Passwort: Ihr Infomaniak-Passwort. Bei Zwei-Faktor-Anmeldung legen Sie stattdessen ein App-Passwort an (Infomaniak Manager → Sicherheit → App-Passwörter).\n4. Die App legt im Stammverzeichnis Ihres kDrive den Ordner Recordings an und speichert dort jede Aufnahme mit einer kleinen .json-Datei daneben. Umbenennen oder Löschen in der App folgt der Ordner.\n5. Transkription und bereinigte Fassung kommen dazu, sobald das Telefon sie erstellt hat. Der Ordner ist ein Export: Es wird nie etwas von dort geholt.\nNextcloud und jeder andere WebDAV-Server funktionieren genauso: Geben Sie die vollständige https://-Adresse als Server an.</string>
     <string name="summary_title">Hauptpunkte</string>

@@ -71,7 +71,7 @@
     <string name="processing_cloud">mi ordenador, por la carpeta en la nube</string>
     <string name="processing_off">nadie</string>
     <string name="model">modelo en el teléfono (más grande = mejor, más lento)</string>
-    <string name="model_not_yet">se descarga al primer uso</string>
+    <string name="model_not_yet">por descargar</string>
     <string name="model_shared">compartido con %s</string>
     <string name="model_resume">%d%% ya descargado · toca para continuar</string>
     <string name="clean_on_phone">hacer también una copia limpia (volumen, zumbido)</string>
@@ -103,8 +103,10 @@
     <string name="notif_playing">reproduciendo</string>
     <string name="listen_empty">nada grabado todavía</string>
     <string name="quality">calidad de transcripción</string>
-    <string name="quality_normal">calidad normal</string>
-    <string name="quality_high">alta calidad (mucho más lento)</string>
+    <string name="recommended">recomendado</string>
+    <string name="quality_high_hint">4 veces más lenta</string>
+    <string name="quality_normal">corriente</string>
+    <string name="quality_high">cuidada</string>
     <string name="cloud_hint_export">Las grabaciones se quedan en este teléfono, que las transcribe él mismo con Whisper (el modelo se descarga una vez). Una carpeta en la nube es opcional (WebDAV: kDrive, Nextcloud…): el teléfono copia allí cada grabación, con su transcripción y su copia de escucha limpia. Es una exportación: no vuelve nada. Nada pasa por Google.</string>
     <string name="cloud_guide_export">Alojar las grabaciones en kDrive (Infomaniak), paso a paso\n1. Abra kDrive en un navegador. Su dirección contiene un número después de /drive/ — por ejemplo ksuite.infomaniak.com/kdrive/app/drive/123456/… — ese número basta como servidor.\n2. Usuario: el correo con el que entra en Infomaniak.\n3. Contraseña: su contraseña de Infomaniak. Si tiene verificación en dos pasos, cree una contraseña de aplicación (Infomaniak Manager → Seguridad → Contraseñas de aplicación).\n4. La app crea una carpeta Recordings en la raíz de su kDrive y deja allí cada grabación, con un pequeño .json al lado. Si renombra o borra en la app, la carpeta sigue.\n5. La transcripción y la copia limpia se añaden en cuanto el teléfono las produce. La carpeta es una exportación: nunca se recupera nada de ella.\nNextcloud y cualquier otro servidor WebDAV funcionan igual: indique la dirección https:// completa como servidor.</string>
     <string name="summary_title">puntos principales</string>

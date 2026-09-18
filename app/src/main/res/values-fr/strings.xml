@@ -71,7 +71,7 @@
     <string name="processing_cloud">mon ordinateur, via le dossier cloud</string>
     <string name="processing_off">personne</string>
     <string name="model">modèle sur le téléphone (plus gros = meilleur, plus lent)</string>
-    <string name="model_not_yet">téléchargé à la première utilisation</string>
+    <string name="model_not_yet">à récupérer</string>
     <string name="model_shared">partagé avec %s</string>
     <string name="model_resume">déjà téléchargé : %d %% — toucher pour continuer</string>
     <string name="clean_on_phone">faire aussi une copie nettoyée (volume, ronflement)</string>
@@ -103,8 +103,10 @@
     <string name="notif_playing">lecture</string>
     <string name="listen_empty">rien d\'enregistré pour l\'instant</string>
     <string name="quality">qualité de transcription</string>
-    <string name="quality_normal">qualité normale</string>
-    <string name="quality_high">haute qualité (beaucoup plus lent)</string>
+    <string name="recommended">recommandé</string>
+    <string name="quality_high_hint">4 fois plus lente</string>
+    <string name="quality_normal">ordinaire</string>
+    <string name="quality_high">soignée</string>
     <string name="cloud_hint_export">Les enregistrements restent sur ce téléphone, qui les transcrit lui-même avec Whisper (le modèle est téléchargé une fois). Un dossier cloud est facultatif (WebDAV : kDrive, Nextcloud…) : le téléphone y dépose alors chaque enregistrement, avec sa transcription et sa copie d\'écoute nettoyée. C\'est un export — rien n\'en revient. Rien ne passe par Google.</string>
     <string name="cloud_guide_export">Héberger les enregistrements sur kDrive (Infomaniak), pas à pas\n1. Ouvrez kDrive dans un navigateur. Son adresse web contient un numéro après /drive/ — par exemple ksuite.infomaniak.com/kdrive/app/drive/123456/… — ce numéro suffit à l\'app comme serveur.\n2. Identifiant : l\'e-mail avec lequel vous vous connectez chez Infomaniak.\n3. Mot de passe : votre mot de passe Infomaniak. Si la double authentification est active, créez plutôt un mot de passe d\'application (Manager Infomaniak → Sécurité → Mots de passe d\'application) et utilisez celui-là.\n4. L\'app crée un dossier Recordings à la racine de votre kDrive et y dépose chaque enregistrement, avec un petit fichier .json à côté. Renommez ou supprimez un enregistrement dans l\'app : le dossier suit.\n5. Chaque enregistrement est rejoint par sa transcription et sa copie nettoyée dès que le téléphone les a produites. Le dossier est un export : rien n\'en est jamais rapatrié.\nNextcloud et tout autre serveur WebDAV fonctionnent de même : indiquez l\'adresse https:// complète comme serveur.</string>
     <string name="summary_title">points principaux</string>
