@@ -2,143 +2,40 @@
 
 # Reader's Recorder
 
-A black-and-white, text-only voice recorder for Android, in the
-[Reader's](https://github.com/funkypitt/readers-launcher) family — and an answer to the
-Pixel Recorder that keeps your recordings off Google's servers. Record a memo, a lecture or a
-conversation with one tap; if you want, the recording goes to **your own cloud folder**
-(WebDAV: Infomaniak kDrive, Nextcloud…), where **your own computer** cleans the sound,
-normalises its loudness and transcribes it with WhisperX. The transcript and the cleaned
-audio come back to the phone.
+One tap records a memo, a lecture or a conversation, screen off included. The phone itself
+writes the transcript ([whisper.cpp](https://github.com/ggerganov/whisper.cpp)), evens the
+loudness and can list the main points (beta) — nothing leaves it. Optional export to your own
+WebDAV folder. Text only, six languages; one of the
+[Reader's](https://github.com/funkypitt/readers-launcher) apps.
 
-The phone can also **write the main points of a transcript by itself**, with a three-billion
-parameter model fetched on demand — an option, off until you ask for it, on any phone with
-enough memory to hold it.
+## Key points
 
-**By default nothing leaves the phone — and the phone transcribes by itself**, with
-[whisper.cpp](https://github.com/ggerganov/whisper.cpp) vendored in (quantised `base`,
-`small` or `medium` model, fetched once, 57–539 MB), plus a light-touch cleaned copy (60 Hz
-high-pass, constant gain to −19 LUFS, no compression). The cloud folder is optional, set up in
-three questions (server — for kDrive, just the number in its web address —, username,
-password), with a step-by-step guide in the settings; it hands the work to your computer's
-much bigger model.
+* **● record** is the bottom row of the list; the widget and the Reader's Launcher tile do the
+  same in one tap. On the recording page: the kind (memo, lecture, conversation), pause, ■ stop.
+* A recording's page plays it (tap the rule to seek) and shows the transcript. Long press on a
+  row: rename (titles are otherwise automatic), share the audio or the transcript, delete, or
+  select several.
+* Transcription runs on the phone: normal (Whisper small, 190 MB, the default) or high quality,
+  much slower (large-v3-turbo, 574 MB). The model is fetched once. The language is the phone's,
+  English, or detected.
+* A cleaned listening copy is made beside the original: 60 Hz high-pass, −19 LUFS, no compression.
+* Main points (beta, off by default): a model of about 2 GB, fetched on the first tap; a phone
+  with less than about 6 GB of memory is refused the option.
+* Cloud folder (optional, WebDAV: kDrive, Nextcloud…), set up in three questions. It is an
+  export only: recording, transcript, cleaned copy and points go up, nothing comes back.
+* Two widgets for any launcher (record, listen) and two Reader's Launcher tiles. Models are
+  shared with Reader's Audio Player: nothing is downloaded twice.
+* Permissions: microphone, notifications, and the network for the model download and the
+  cloud folder. No account.
 
-## The phone
+More detail: [docs/NOTES.md](docs/NOTES.md) — internals, the private build and its worker.
 
-* One list, newest first: the title, and under it in small dim type the date and time, the
-  length, the kind, where it stands (on this phone · to upload · in the cloud · cleaned ·
-  transcribed). A title is automatic — the date and time, then the transcript's first words
-  once it exists — unless you typed one (rename; a blank rename goes back to automatic). The one frequent action, **● record**, is an inverted
-  row at the bottom of the list; the widget and the launcher tile do the same in one tap.
-* Recording page: the running time, large; a level line; the kind (memo, lecture,
-  conversation — tap to change; a conversation gets its speakers told apart); pause and ■ stop.
-  Recording runs in a foreground service (type microphone) under a wake lock, with a silent
-  notification carrying pause and stop, so the screen can go off. AAC 128 kb/s, 48 kHz mono;
-  lectures and conversations use the phone's *unprocessed* audio source when it offers one,
-  so the cleaning starts from the raw signal.
-* A recording's page: play/pause with a position rule (tap to seek), the transcript in
-  paragraphs (speakers labelled for a conversation), rename, share the audio or the
-  transcript, delete (here and in the cloud).
-* A long press on a row offers what the recording's page offers — rename, share the audio,
-  share the transcript, delete — plus "select several…": rows become boxes to tick, the
-  bottom row deletes them all (here and in the cloud folder).
-* A long press on "● record" (once a cloud folder exists) asks, for that one recording, who
-  will transcribe it: this phone, or my computer through the cloud folder — handy to compare
-  the two on the same kind of material. The choice is shown in the recording's status line.
-* Settings: who transcribes (this phone · my computer through the cloud folder · nobody), the
-  transcription quality on the phone — normal (Whisper small, 190 MB, the default) or high
-  quality, much slower (large-v3-turbo, 574 MB) —, the cleaned copy, **the main points written
-  on the phone** (off; the first tap fetches the 1.93 GB model, and a phone with less than about
-  6 GB of memory is told plainly that it cannot hold it), the cloud folder (or "forget it — recordings stay
-  here"), the language spoken (the phone's language, English, or detected), the default kind,
-  the look.
-* On the phone, `ProcessService` (a foreground service with a progress notification) works in
-  pieces, so memory stays flat whatever the length of the recording. MediaCodec decodes the
-  file five minutes at a time, each piece resampled to 16 kHz and handed to whisper.cpp, whose
-  model is loaded once for the whole recording (two arm64 builds, one with fp16 arithmetic
-  chosen at runtime). Each piece is primed with a short, well-punctuated sentence in the
-  language spoken and the end of the previous piece, so the text keeps full sentences, commas
-  and capitals across pieces. The listening copy is streamed too, in two passes a minute at a
-  time: the first measures the loudness of the high-passed signal, the second applies the same
-  high-pass and a constant gain to −19 LUFS and encodes AAC. A recording transcribed on the phone is
-  uploaded with its `.txt`, so the workstation worker leaves it alone.
-* **The main points, written here** (`summary/`): once the option is on, every transcript made
-  on this phone gets a list of points beside it (`<id>.resume.txt`), shown above the transcript
-  and exported to the cloud folder with it.
-  [llama.cpp](https://github.com/ggml-org/llama.cpp) is vendored in beside whisper.cpp — its own
-  ggml, its own library, nothing shared — and runs Qwen2.5 3B Instruct (Q4_K_M, 1.93 GB, fetched
-  once) on the processor alone, in a 4096-token context with small batches. The transcript is
-  read in pieces of about 900 words, each piece asked for its points, and the notes are merged
-  into eight. The instruction asks for **one thing only**: measured beforehand on the same
-  interview, a model this size understands what it reads but cannot follow "a summary, then
-  points" — asked for points alone, it obeys. The prompt goes through the model's own chat
-  template, without which a chat model answers beside the question.
-  Three guards, each learned the hard way: a phone too small is refused the option outright
-  rather than killed mid-answer; an attempt is counted **before** it is made, so a summary that
-  takes the application down with it can never restart the same recording for ever (two goes,
-  then the recording is left alone until "write the main points" is chosen by hand); and a
-  failure is always silent — a recording keeps its transcript whatever happens here.
-* **Widgets** for any launcher: "● record" with the latest recording under it (while
-  recording, a live Chronometer and ■); and **listen**: one recording at a time, newest
-  first, ▶ / ❚❚ plays and pauses, ‹ › step to the more recent and the older ones (a standard
-  widget cannot be swiped), the title opens it. **Reader's Launcher tiles**: "recorder" (the
-  same record button) and "recordings" (listen, swiping from the latest to the older ones).
-* One player for the whole app (`PlayerService`, foreground mediaPlayback, audio focus,
-  pauses when headphones are pulled out): what plays from the widget or the launcher tile also
-  shows on the recording's page and in the notification. Starting a recording stops playback.
-* English, French, German, Spanish, Portuguese, Russian.
+## Install
 
-## Two audiences
+From the F-Droid repo `https://funkypitt.github.io/fdroid-repo/repo`, or the APK of the
+[latest release](https://github.com/funkypitt/readers-recorder/releases/latest).
 
-One code base, two builds, chosen by the `audience` flavour dimension:
-
-* **`publique`** — the build published on F-Droid. A cloud folder is an **export**: the phone
-  uploads the recording, the transcript it made itself, its cleaned listening copy
-  (`<base>_nettoye.m4a`) and the points it wrote (`<base>.resume.txt`), and never fetches
-  anything back. "Who transcribes" offers this phone or nobody. The main points written on the
-  phone are offered here too: they need nothing but the phone.
-* **`prive`** — never published. Adds what only a workstation can serve: cleaning, transcription
-  and the summary by the computer behind the WebDAV folder (`worker/recorder_worker.py`), the
-  per-recording chooser on a long press, and fetching the results back.
-
-The private build keeps the same application id and its version code stays **500 ahead**
-(`baseVersionCode + 500`), so an F-Droid release of the public build can never land on the phone
-as an update and quietly remove those features.
-
-```
-./gradlew assemblePubliqueRelease     # F-Droid
-./gradlew assemblePriveRelease        # the phone of whoever runs the worker
-```
-
-## The workstation: `worker/recorder_worker.py`
-
-Watches the recordings folder — the kDrive client's local mirror (`~/kDrive/Recordings`) or
-the WebDAV folder directly — and for every `<base>.m4a` the phone has dropped:
-
-1. **cleans** it with `nettoyer.py` from the traduction toolkit (hum notches, DeepFilterNet
-   or afftdn with a DNSMOS quality gate, linear loudness normalisation to −19 LUFS mono),
-   falling back to an ffmpeg `afftdn` + `loudnorm` chain if the toolkit is missing →
-   `<base>_nettoye.mp3` (+ `<base>_nettoyage.json`, the report);
-2. **transcribes** the cleaned audio with WhisperX (large-v3 by default, GPU, shared toolkit
-   lock, resident Ollama models purged first), aligned; speaker diarization for a
-   conversation when `HF_TOKEN` is set → `<base>.txt` (paragraphs broken only where a sentence has ended, after a pause or past ~600 characters —
-the same rule as on the phone) and `<base>.segments.json`.
-
-3. **summarises** the transcript with a local model through Ollama (`gemma4:31b` by default,
-   `--resume-model` to change it, `--no-resume` to skip): a three to five sentence summary then
-   the main points, in the transcript's language → `<base>.resume.txt`. A long transcript is
-   summarised in pieces of `--resume-chunk-words` words, then the pieces are merged. The summary
-   comes after the transcript is written, so a model that is absent, busy or slow never costs a
-   recording its transcript. `--resume-missing` writes the summaries of transcripts already there.
-
-`<base>.txt` is the "done" mark; `<base>.busy` guards work in progress; `<base>.error.txt`
-carries a failure (the phone shows its first line; `--retry-errors` retries).
-
-```
-~/miniconda3/envs/interview/bin/python worker/recorder_worker.py --folder ~/kDrive/Recordings
-worker/install.sh        # systemd user service, 60 s polling
-```
-
-## Building the app
+## Build
 
 ```
 git clone --recursive https://github.com/funkypitt/readers-recorder.git   # or: git submodule update --init
@@ -146,10 +43,10 @@ export JAVA_HOME=/path/to/jdk-21
 ./gradlew assemblePubliqueDebug
 ```
 
-minSdk 26, targetSdk 34. MIT. Whisper, the summary model and the code around them are the
-[readers-speech](https://github.com/funkypitt/readers-speech) module, a git submodule at `speech/`
-shared with Reader's Audio Player — and the model files are shared too: a model downloaded by
-either app is read by the other through a content provider, nothing is downloaded twice.
+minSdk 26, targetSdk 34. `speech/` is the
+[readers-speech](https://github.com/funkypitt/readers-speech) submodule. Two flavours: `publique`
+(F-Droid) and `prive` (adds the workstation worker; same application id, version code 500
+ahead). Keep `ndkVersion` in `app/build.gradle.kts`, or the native libraries ship unstripped.
 
 ## Crédits / Credits
 
