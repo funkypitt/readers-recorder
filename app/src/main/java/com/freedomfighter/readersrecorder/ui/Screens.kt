@@ -404,7 +404,7 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
             if (got.fromFallback) importedFrom else imported
         } catch (e: Credentials.NotCredentials) { notCredentials
         } catch (e: Credentials.NothingForUs) { nothingForUs
-        } catch (e: Exception) { e.message ?: notCredentials }
+        } catch (e: Exception) { notCredentials }   // unreadable or not JSON: the system's text would be English
     }
     BackHandler { nav.pop() }
     Page {
@@ -461,7 +461,7 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
                         TextRow(
                             stringResource(if (m == Models.HIGH) R.string.quality_high else R.string.quality_normal),
                             inverted = m == chosen,
-                            secondary = m.mb.toString() + " MB" + note + state,
+                            secondary = stringResource(R.string.size_mb, m.mb) + note + state,
                         ) { app.prefs.setModel(m.key) }
                     }
                     TextRow(if (s.cleanOnPhone) stringResource(R.string.on) else stringResource(R.string.off), secondary = stringResource(R.string.clean_on_phone)) { app.prefs.setCleanOnPhone(!s.cleanOnPhone) }
@@ -499,7 +499,7 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
                                 !here && fetching < 0 && part > 0 -> stringResource(R.string.model_resume, part)
                                 // the model the other app already holds, read through it: nothing to fetch
                                 sharedFrom != null -> stringResource(R.string.summary_on_phone) + " · " + stringResource(R.string.model_shared, "Audio Player")
-                                else -> stringResource(R.string.summary_on_phone) + " · " + SummaryModel.MB + " MB" + summaryState
+                                else -> stringResource(R.string.summary_on_phone) + " · " + stringResource(R.string.size_mb, SummaryModel.MB) + summaryState
                             },
                         ) {
                             if (here) { app.prefs.setSummaryOnPhone(!s.summaryOnPhone); if (!s.summaryOnPhone) ProcessService.kick(context) }

@@ -19,7 +19,7 @@
     <string name="kind_memo">memo</string>
     <string name="kind_lecture">lecture</string>
     <string name="kind_conversation">conversation</string>
-    <string name="kind_hint">tap to change · a conversation gets its speakers told apart</string>
+    <string name="kind_hint">tap to change</string>
     <string name="next_kind">kind of the next recording</string>
     <string name="status_transcribed">transcribed</string>
     <string name="status_cleaned">cleaned</string>
@@ -41,7 +41,7 @@
     <string name="haptics">haptic tick</string>
     <string name="on">on</string>
     <string name="off">off</string>
-    <string name="about">record, and let your own computer clean and transcribe</string>
+    <string name="about">records and transcribes on the phone; a cloud folder is optional</string>
     <string name="credits">Pierre Gallaz · developed with Claude Code</string>
     <string name="cloud_hint">Recordings stay on this phone, and the phone itself transcribes them with Whisper (the model is fetched once). A cloud folder is optional (WebDAV: kDrive, Nextcloud…): then each recording is also uploaded there, and if the small worker from the app\'s repository runs on your computer, it takes over the cleaning and the transcription with a much bigger model; transcript and cleaned audio come back here. Nothing goes to Google.</string>
     <string name="cloud_setup">set up a cloud folder</string>
@@ -69,13 +69,13 @@
     <string name="transcript_needs_folder">no transcript: recordings stay on this phone. Tap to set up a cloud folder, through which your computer transcribes them.</string>
     <string name="local_only_phone">on this phone only — transcribed here, nothing leaves the phone</string>
     <string name="processing">who transcribes</string>
-    <string name="processing_phone">this phone (whisper)</string>
+    <string name="processing_phone">this phone</string>
     <string name="processing_cloud">my computer, through the cloud folder</string>
     <string name="processing_off">nobody</string>
     <string name="model">model on the phone (bigger = better, slower)</string>
     <string name="model_not_yet">to fetch</string>
     <string name="model_shared">shared with %s</string>
-    <string name="model_resume">%d%% already down · tap to carry on</string>
+    <string name="model_resume">%d%% downloaded · tap to continue</string>
     <string name="clean_on_phone">also make a cleaned copy (volume, rumble)</string>
     <string name="channel_processing">transcription</string>
     <string name="phase_model">fetching the model · %1$d%%</string>
@@ -109,7 +109,7 @@
     <string name="quality_high_hint">four times slower</string>
     <string name="quality_normal">ordinary</string>
     <string name="quality_high">careful</string>
-    <string name="cloud_hint_export">Recordings stay on this phone, and the phone itself transcribes them with Whisper (the model is fetched once). A cloud folder is optional (WebDAV: kDrive, Nextcloud…): the phone then copies each recording there, together with its transcript and its cleaned listening copy. It is an export — nothing is fetched back. Nothing goes to Google.</string>
+    <string name="cloud_hint_export">Recordings stay on this phone, which transcribes them itself (the model is downloaded once). A cloud folder is optional (WebDAV: kDrive, Nextcloud…): each recording is then copied there with its transcript and cleaned copy. Nothing is fetched back from it, and nothing goes to Google.</string>
     <string name="cloud_guide_export">How to host recordings on kDrive (Infomaniak)\n1. Open kDrive in a browser. Its web address contains a number after /drive/ — for example ksuite.infomaniak.com/kdrive/app/drive/123456/… — that number is all the app needs as the server.\n2. Username: the e-mail you log in to Infomaniak with.\n3. Password: your Infomaniak password. If two-factor authentication is on, create an application password instead (Infomaniak Manager → Security → Application passwords) and use that one.\n4. The app creates a folder named Recordings at the root of your kDrive and puts every recording there, with a small .json beside it. Rename or delete a recording in the app and the folder follows.\n5. Each recording is joined by its transcript and its cleaned copy as soon as the phone has made them. The folder is an export: nothing is ever fetched back from it.\nNextcloud and any other WebDAV server work the same way: give the full https:// address as the server.</string>
     <string name="summary_title">main points</string>
     <string name="phase_summary">writing the main points, %d%%</string>
@@ -117,10 +117,27 @@
     <string name="summary_needs_memory">this phone has %d GB: not enough</string>
     <string name="summarise_now">write the main points (beta)</string>
     <string name="export_credentials">export credentials</string>
-    <string name="export_credentials_hint">a file to set up another device or the desktop apps — it holds the password</string>
+    <string name="export_credentials_hint">a file to set up another device or app — it contains the password</string>
     <string name="import_credentials">import credentials</string>
     <string name="credentials_imported">credentials imported</string>
     <string name="credentials_imported_from">server and login taken from %1$s</string>
     <string name="credentials_not_a_file">not a Reader\'s credentials file</string>
     <string name="credentials_nothing">this file holds nothing for %1$s</string>
+    <string name="error_model_missing">the model is missing — try again to fetch it</string>
+    <string name="error_no_connection">no connection</string>
+    <string name="error_download_http">download refused (HTTP %1$d)</string>
+    <string name="error_download_cut">download cut short — try again to carry on</string>
+    <string name="error_no_space">not enough space: %1$d MB needed</string>
+    <string name="error_no_audio">no sound in this file</string>
+    <string name="error_transcription">transcription failed: %1$s</string>
+    <string name="error_download">download failed: %1$s</string>
+    <string name="size_mb">%1$d MB</string>
+    <string name="synced_at">synced %1$s</string>
+    <string name="error_login">wrong username or password</string>
+    <string name="error_server_http">the server answered with an error (HTTP %1$d)</string>
+    <string name="error_method">this phone cannot send the %1$s request</string>
+    <string name="error_sync">sync failed: %1$s</string>
+    <string name="error_upload">upload failed: %1$s</string>
+    <string name="error_worker">the computer could not process it</string>
+    <string name="error_worker_says">the computer reports: %1$s</string>
 </resources>

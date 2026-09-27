@@ -17,7 +17,7 @@
     <string name="kind_memo">Memo</string>
     <string name="kind_lecture">Vortrag</string>
     <string name="kind_conversation">Gespräch</string>
-    <string name="kind_hint">antippen zum Ändern · bei einem Gespräch werden die Sprecher unterschieden</string>
+    <string name="kind_hint">antippen zum Ändern</string>
     <string name="next_kind">Art der nächsten Aufnahme</string>
     <string name="status_transcribed">transkribiert</string>
     <string name="status_cleaned">bereinigt</string>
@@ -39,7 +39,7 @@
     <string name="haptics">haptisches Feedback</string>
     <string name="on">an</string>
     <string name="off">aus</string>
-    <string name="about">aufnehmen, und den eigenen Computer bereinigen und transkribieren lassen</string>
+    <string name="about">nimmt auf und transkribiert auf dem Telefon; ein Cloud-Ordner ist optional</string>
     <string name="credits">Pierre Gallaz · entwickelt mit Claude Code</string>
     <string name="cloud_hint">Aufnahmen bleiben auf diesem Telefon, und das Telefon transkribiert sie selbst mit Whisper (das Modell wird einmal geladen). Ein Cloud-Ordner ist optional (WebDAV: kDrive, Nextcloud…): dann wird jede Aufnahme auch dorthin hochgeladen, und wenn der kleine Worker aus dem Repository der App auf Ihrem Computer läuft, übernimmt er Bereinigung und Transkription mit einem viel grösseren Modell; Transkript und bereinigter Ton kommen hierher zurück. Nichts geht an Google.</string>
     <string name="cloud_setup">Cloud-Ordner einrichten</string>
@@ -67,7 +67,7 @@
     <string name="transcript_needs_folder">kein Transkript: Aufnahmen bleiben auf diesem Telefon. Antippen, um einen Cloud-Ordner einzurichten, über den Ihr Computer sie transkribiert.</string>
     <string name="local_only_phone">nur auf diesem Telefon — hier transkribiert, nichts verlässt das Telefon</string>
     <string name="processing">wer transkribiert</string>
-    <string name="processing_phone">dieses Telefon (Whisper)</string>
+    <string name="processing_phone">dieses Telefon</string>
     <string name="processing_cloud">mein Computer, über den Cloud-Ordner</string>
     <string name="processing_off">niemand</string>
     <string name="model">Modell auf dem Telefon (grösser = besser, langsamer)</string>
@@ -107,18 +107,35 @@
     <string name="quality_high_hint">viermal langsamer</string>
     <string name="quality_normal">gewöhnlich</string>
     <string name="quality_high">sorgfältig</string>
-    <string name="cloud_hint_export">Die Aufnahmen bleiben auf diesem Telefon, das sie selbst mit Whisper transkribiert (das Modell wird einmal geladen). Ein Cloud-Ordner ist optional (WebDAV: kDrive, Nextcloud…): Das Telefon legt dann jede Aufnahme dort ab, zusammen mit ihrer Transkription und ihrer bereinigten Hörfassung. Es ist ein Export — nichts kommt zurück. Nichts geht zu Google.</string>
+    <string name="cloud_hint_export">Die Aufnahmen bleiben auf diesem Telefon, das sie selbst transkribiert (das Modell wird einmal geladen). Ein Cloud-Ordner ist optional (WebDAV: kDrive, Nextcloud…): Jede Aufnahme wird dann dorthin kopiert, mit Transkript und bereinigter Kopie. Nichts wird von dort zurückgeholt, und nichts geht an Google.</string>
     <string name="cloud_guide_export">Aufnahmen auf kDrive (Infomaniak) ablegen, Schritt für Schritt\n1. Öffnen Sie kDrive im Browser. Die Adresse enthält nach /drive/ eine Nummer — etwa ksuite.infomaniak.com/kdrive/app/drive/123456/… — diese Nummer genügt der App als Server.\n2. Benutzername: die E-Mail-Adresse Ihres Infomaniak-Kontos.\n3. Passwort: Ihr Infomaniak-Passwort. Bei Zwei-Faktor-Anmeldung legen Sie stattdessen ein App-Passwort an (Infomaniak Manager → Sicherheit → App-Passwörter).\n4. Die App legt im Stammverzeichnis Ihres kDrive den Ordner Recordings an und speichert dort jede Aufnahme mit einer kleinen .json-Datei daneben. Umbenennen oder Löschen in der App folgt der Ordner.\n5. Transkription und bereinigte Fassung kommen dazu, sobald das Telefon sie erstellt hat. Der Ordner ist ein Export: Es wird nie etwas von dort geholt.\nNextcloud und jeder andere WebDAV-Server funktionieren genauso: Geben Sie die vollständige https://-Adresse als Server an.</string>
-    <string name="summary_title">Hauptpunkte</string>
+    <string name="summary_title">wichtigste Punkte</string>
     <string name="phase_summary">die wichtigsten Punkte werden geschrieben, %d %%</string>
     <string name="summary_on_phone">auch die wichtigsten Punkte schreiben (beta)</string>
     <string name="summary_needs_memory">dieses Telefon hat %d GB: zu wenig</string>
     <string name="summarise_now">die wichtigsten Punkte schreiben (beta)</string>
     <string name="export_credentials">Zugangsdaten exportieren</string>
-    <string name="export_credentials_hint">eine Datei, um ein anderes Gerät oder die Desktop-Apps einzurichten — sie enthält das Passwort</string>
+    <string name="export_credentials_hint">eine Datei, um ein anderes Gerät oder eine andere App einzurichten — sie enthält das Passwort</string>
     <string name="import_credentials">Zugangsdaten importieren</string>
     <string name="credentials_imported">Zugangsdaten importiert</string>
     <string name="credentials_imported_from">Server und Login aus %1$s übernommen</string>
     <string name="credentials_not_a_file">keine Reader\'s-Zugangsdatendatei</string>
     <string name="credentials_nothing">diese Datei enthält nichts für %1$s</string>
+    <string name="error_model_missing">das Modell fehlt — erneut versuchen, um es zu laden</string>
+    <string name="error_no_connection">keine Verbindung</string>
+    <string name="error_download_http">Download abgelehnt (HTTP %1$d)</string>
+    <string name="error_download_cut">Download abgebrochen — erneut versuchen, um fortzusetzen</string>
+    <string name="error_no_space">nicht genug Speicherplatz: %1$d MB nötig</string>
+    <string name="error_no_audio">kein Ton in dieser Datei</string>
+    <string name="error_transcription">Transkription fehlgeschlagen: %1$s</string>
+    <string name="error_download">Download fehlgeschlagen: %1$s</string>
+    <string name="size_mb">%1$d MB</string>
+    <string name="synced_at">synchronisiert um %1$s</string>
+    <string name="error_login">Benutzername oder Passwort falsch</string>
+    <string name="error_server_http">der Server meldet einen Fehler (HTTP %1$d)</string>
+    <string name="error_method">dieses Telefon kann die Anfrage %1$s nicht senden</string>
+    <string name="error_sync">Synchronisierung fehlgeschlagen: %1$s</string>
+    <string name="error_upload">Hochladen fehlgeschlagen: %1$s</string>
+    <string name="error_worker">der Computer konnte sie nicht verarbeiten</string>
+    <string name="error_worker_says">der Computer meldet: %1$s</string>
 </resources>

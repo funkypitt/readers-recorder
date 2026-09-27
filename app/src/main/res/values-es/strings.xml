@@ -17,7 +17,7 @@
     <string name="kind_memo">nota de voz</string>
     <string name="kind_lecture">conferencia</string>
     <string name="kind_conversation">conversación</string>
-    <string name="kind_hint">toca para cambiar · en una conversación se distinguen los hablantes</string>
+    <string name="kind_hint">toca para cambiar</string>
     <string name="next_kind">tipo de la próxima grabación</string>
     <string name="status_transcribed">transcrita</string>
     <string name="status_cleaned">limpia</string>
@@ -39,7 +39,7 @@
     <string name="haptics">vibración</string>
     <string name="on">activo</string>
     <string name="off">inactivo</string>
-    <string name="about">grabar, y dejar que tu propio ordenador limpie y transcriba</string>
+    <string name="about">graba y transcribe en el teléfono; una carpeta en la nube es opcional</string>
     <string name="credits">Pierre Gallaz · desarrollado con Claude Code</string>
     <string name="cloud_hint">Las grabaciones se quedan en este teléfono, y el propio teléfono las transcribe con Whisper (el modelo se descarga una vez). Una carpeta en la nube es opcional (WebDAV: kDrive, Nextcloud…): entonces cada grabación también se sube ahí, y si el pequeño worker del repositorio de la app corre en tu ordenador, se encarga de la limpieza y la transcripción con un modelo mucho mayor; la transcripción y el audio limpio vuelven aquí. Nada va a Google.</string>
     <string name="cloud_setup">configurar una carpeta en la nube</string>
@@ -67,7 +67,7 @@
     <string name="transcript_needs_folder">sin transcripción: las grabaciones se quedan en este teléfono. Toca para configurar una carpeta en la nube, por la que tu ordenador las transcribe.</string>
     <string name="local_only_phone">solo en este teléfono — transcrito aquí, nada sale del teléfono</string>
     <string name="processing">quién transcribe</string>
-    <string name="processing_phone">este teléfono (whisper)</string>
+    <string name="processing_phone">este teléfono</string>
     <string name="processing_cloud">mi ordenador, por la carpeta en la nube</string>
     <string name="processing_off">nadie</string>
     <string name="model">modelo en el teléfono (más grande = mejor, más lento)</string>
@@ -107,7 +107,7 @@
     <string name="quality_high_hint">4 veces más lenta</string>
     <string name="quality_normal">corriente</string>
     <string name="quality_high">cuidada</string>
-    <string name="cloud_hint_export">Las grabaciones se quedan en este teléfono, que las transcribe él mismo con Whisper (el modelo se descarga una vez). Una carpeta en la nube es opcional (WebDAV: kDrive, Nextcloud…): el teléfono copia allí cada grabación, con su transcripción y su copia de escucha limpia. Es una exportación: no vuelve nada. Nada pasa por Google.</string>
+    <string name="cloud_hint_export">Las grabaciones se quedan en este teléfono, que las transcribe él mismo (el modelo se descarga una vez). Una carpeta en la nube es opcional (WebDAV: kDrive, Nextcloud…): cada grabación se copia allí con su transcripción y su copia limpia. No se trae nada de vuelta, y nada pasa por Google.</string>
     <string name="cloud_guide_export">Alojar las grabaciones en kDrive (Infomaniak), paso a paso\n1. Abra kDrive en un navegador. Su dirección contiene un número después de /drive/ — por ejemplo ksuite.infomaniak.com/kdrive/app/drive/123456/… — ese número basta como servidor.\n2. Usuario: el correo con el que entra en Infomaniak.\n3. Contraseña: su contraseña de Infomaniak. Si tiene verificación en dos pasos, cree una contraseña de aplicación (Infomaniak Manager → Seguridad → Contraseñas de aplicación).\n4. La app crea una carpeta Recordings en la raíz de su kDrive y deja allí cada grabación, con un pequeño .json al lado. Si renombra o borra en la app, la carpeta sigue.\n5. La transcripción y la copia limpia se añaden en cuanto el teléfono las produce. La carpeta es una exportación: nunca se recupera nada de ella.\nNextcloud y cualquier otro servidor WebDAV funcionan igual: indique la dirección https:// completa como servidor.</string>
     <string name="summary_title">puntos principales</string>
     <string name="phase_summary">escribiendo los puntos principales, %d %%</string>
@@ -115,10 +115,27 @@
     <string name="summary_needs_memory">este teléfono tiene %d GB: no basta</string>
     <string name="summarise_now">escribir los puntos principales (beta)</string>
     <string name="export_credentials">exportar credenciales</string>
-    <string name="export_credentials_hint">un archivo para configurar otro dispositivo o las apps de escritorio — contiene la contraseña</string>
+    <string name="export_credentials_hint">un archivo para configurar otro dispositivo u otra app — contiene la contraseña</string>
     <string name="import_credentials">importar credenciales</string>
     <string name="credentials_imported">credenciales importadas</string>
     <string name="credentials_imported_from">servidor y usuario tomados de %1$s</string>
     <string name="credentials_not_a_file">no es un archivo de credenciales Reader\'s</string>
     <string name="credentials_nothing">este archivo no contiene nada para %1$s</string>
+    <string name="error_model_missing">falta el modelo — reintenta para descargarlo</string>
+    <string name="error_no_connection">sin conexión</string>
+    <string name="error_download_http">descarga rechazada (HTTP %1$d)</string>
+    <string name="error_download_cut">descarga interrumpida — reintenta para continuar</string>
+    <string name="error_no_space">no hay espacio suficiente: se necesitan %1$d MB</string>
+    <string name="error_no_audio">no hay sonido en este archivo</string>
+    <string name="error_transcription">la transcripción falló: %1$s</string>
+    <string name="error_download">la descarga falló: %1$s</string>
+    <string name="size_mb">%1$d MB</string>
+    <string name="synced_at">sincronizado a las %1$s</string>
+    <string name="error_login">usuario o contraseña incorrectos</string>
+    <string name="error_server_http">el servidor respondió con un error (HTTP %1$d)</string>
+    <string name="error_method">este teléfono no puede enviar la petición %1$s</string>
+    <string name="error_sync">la sincronización falló: %1$s</string>
+    <string name="error_upload">la subida falló: %1$s</string>
+    <string name="error_worker">el ordenador no pudo procesarla</string>
+    <string name="error_worker_says">el ordenador informa: %1$s</string>
 </resources>

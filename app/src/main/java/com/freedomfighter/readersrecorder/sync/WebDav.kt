@@ -10,7 +10,11 @@ import java.net.URLDecoder
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-class WebDavException(message: String) : IOException(message)
+/** What went wrong, as a kind the screens put into words: the message itself stays for the logs. */
+class WebDavException(val kind: Kind, val code: Int = 0, val method: String = "") :
+    IOException(when (kind) { Kind.LOGIN -> "wrong username or password"; Kind.HTTP -> "$method: HTTP $code"; Kind.METHOD -> "cannot send $method on this device" }) {
+    enum class Kind { LOGIN, HTTP, METHOD }
+}
 
 data class RemoteFile(val name: String, val etag: String?, val modified: Long, val isDir: Boolean)
 
@@ -33,8 +37,8 @@ class WebDav(private val username: String, private val password: String) {
             if (body != null) c.outputStream.use { it.write(body) }
             val code = c.responseCode
             val text = (if (code in 200..299) c.inputStream else c.errorStream)?.readBytes()?.toString(Charsets.UTF_8) ?: ""
-            if (code == 401) throw WebDavException("wrong username or password")
-            if (code >= 400 && code !in allow) throw WebDavException("$method: HTTP $code")
+            if (code == 401) throw WebDavException(WebDavException.Kind.LOGIN)
+            if (code >= 400 && code !in allow) throw WebDavException(WebDavException.Kind.HTTP, code, method)
             return Resp(code, text, c.headerFields)
         } finally { c.disconnect() }
     }
@@ -46,7 +50,7 @@ class WebDav(private val username: String, private val password: String) {
         while (cls != null) {
             try { val f = cls.getDeclaredField("method"); f.isAccessible = true; f.set(target, method); return } catch (_: NoSuchFieldException) { cls = cls.superclass }
         }
-        throw WebDavException("cannot send $method on this device")
+        throw WebDavException(WebDavException.Kind.METHOD, method = method)
     }
 
     /** The files directly inside [folderUrl] (the folder itself excluded). */
@@ -86,8 +90,8 @@ class WebDav(private val username: String, private val password: String) {
         try {
             file.inputStream().use { i -> c.outputStream.use { o -> i.copyTo(o, 64 * 1024) } }
             val code = c.responseCode
-            if (code == 401) throw WebDavException("wrong username or password")
-            if (code >= 400) throw WebDavException("PUT: HTTP $code")
+            if (code == 401) throw WebDavException(WebDavException.Kind.LOGIN)
+            if (code >= 400) throw WebDavException(WebDavException.Kind.HTTP, code, "PUT")
         } finally { c.disconnect() }
     }
 
@@ -101,8 +105,8 @@ class WebDav(private val username: String, private val password: String) {
         try {
             val code = c.responseCode
             if (code == 404) return false
-            if (code == 401) throw WebDavException("wrong username or password")
-            if (code >= 400) throw WebDavException("GET: HTTP $code")
+            if (code == 401) throw WebDavException(WebDavException.Kind.LOGIN)
+            if (code >= 400) throw WebDavException(WebDavException.Kind.HTTP, code, "GET")
             val tmp = java.io.File(file.parentFile, file.name + ".part")
             c.inputStream.use { i -> tmp.outputStream().use { o -> i.copyTo(o, 64 * 1024) } }
             if (!tmp.renameTo(file)) { file.delete(); tmp.renameTo(file) }

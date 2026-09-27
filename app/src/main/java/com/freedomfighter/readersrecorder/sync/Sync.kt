@@ -1,6 +1,9 @@
 package com.freedomfighter.readersrecorder.sync
 
+import android.content.Context
 import com.freedomfighter.readersrecorder.BuildConfig
+import com.freedomfighter.readersrecorder.Errors
+import com.freedomfighter.readersrecorder.R
 import com.freedomfighter.readersrecorder.data.Recording
 import com.freedomfighter.readersrecorder.data.Settings
 import com.freedomfighter.readersrecorder.data.Store
@@ -17,7 +20,8 @@ import org.json.JSONObject
 object Sync {
     data class Result(val uploaded: Int, val transcripts: Int, val cleaned: Int)
 
-    fun run(store: Store, s: Settings): Result {
+    /** [ctx] puts a failure into the user's words before it is stored on the recording. */
+    fun run(ctx: Context, store: Store, s: Settings): Result {
         val dav = WebDav(s.username, s.password)
         val folder = s.folderUrl
         dav.mkcol(folder)
@@ -34,7 +38,7 @@ object Sync {
                 putPhoneClean(dav, folder, store, r)
                 putPhoneSummary(dav, folder, store, r)
                 store.update(r.copy(uploaded = true, error = "")); up++
-            } catch (e: Exception) { store.update(r.copy(error = e.message ?: "upload failed")) }
+            } catch (e: Exception) { store.update(r.copy(error = Errors.describe(ctx, e, R.string.error_upload))) }
         }
         // ---- the export catches up ----
         // A recording is usually uploaded before the phone has finished transcribing and cleaning it,
@@ -74,9 +78,11 @@ object Sync {
                         if (dav.download(folder + encodeSegment(r.base + "_nettoye.mp3"), store.cleanTarget(r, "mp3"))) { store.update(r.id) { it.copy(cleaned = true) }; cl++ }
                     }
                     if (!r.transcribed && r.base + ".error.txt" in names) {
-                        store.update(r.id) { it.copy(error = dav.get(folder + encodeSegment(r.base + ".error.txt")).lines().firstOrNull()?.take(120) ?: "worker error") }
+                        // The worker's own words, which this app cannot translate: said to come from the computer.
+                        val why = dav.get(folder + encodeSegment(r.base + ".error.txt")).lines().firstOrNull()?.trim()?.take(120)
+                        store.update(r.id) { it.copy(error = if (why.isNullOrBlank()) ctx.getString(R.string.error_worker) else ctx.getString(R.string.error_worker_says, why)) }
                     }
-                } catch (e: Exception) { store.update(r.id) { it.copy(error = e.message ?: "sync failed") } }
+                } catch (e: Exception) { store.update(r.id) { it.copy(error = Errors.describe(ctx, e, R.string.error_sync)) } }
             }
         }
         return Result(up, tr, cl)

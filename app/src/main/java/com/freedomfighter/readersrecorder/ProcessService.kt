@@ -93,7 +93,7 @@ class ProcessService : Service() {
                 try {
                     withContext(Dispatchers.Default) { processOne(app, r, s.language, s.model) }
                 } catch (e: Exception) {
-                    if (!cancelled.get()) app.store.update(r.id) { it.copy(error = (e.message ?: e.javaClass.simpleName).take(120)) }
+                    if (!cancelled.get()) app.store.update(r.id) { it.copy(error = Errors.describe(this@ProcessService, e, R.string.error_transcription)) }
                 }
             }
         } finally {
@@ -121,7 +121,7 @@ class ProcessService : Service() {
             }
             if (SummaryModel.isDownloaded(this)) app.prefs.setSummaryOnPhone(true)
         } catch (e: Exception) {
-            if (!cancelled.get()) app.modelError.value = (e.message ?: e.javaClass.simpleName).take(120)
+            if (!cancelled.get()) app.modelError.value = Errors.describe(this@ProcessService, e, R.string.error_download)
         } finally {
             Live.phase = ""; Live.percent = 0
         }
@@ -142,7 +142,7 @@ class ProcessService : Service() {
             if (cancelled.get()) return
         }
         // Ours, or the sibling app's copy by file descriptor: either way a path whisper reads.
-        val handle = Models.open(this, model) ?: error("model not here")
+        val handle = Models.open(this, model) ?: throw ModelMissing()
         // 2. transcribe the original in five-minute pieces, the model loaded once: memory stays
         //    flat whatever the length. Each piece gets the style sentence and the end of the one before.
         Live.phase = "transcribe"; Live.percent = 0

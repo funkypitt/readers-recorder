@@ -17,7 +17,7 @@
     <string name="kind_memo">заметка</string>
     <string name="kind_lecture">лекция</string>
     <string name="kind_conversation">разговор</string>
-    <string name="kind_hint">нажмите, чтобы изменить · в разговоре различаются говорящие</string>
+    <string name="kind_hint">нажмите, чтобы изменить</string>
     <string name="next_kind">тип следующей записи</string>
     <string name="status_transcribed">расшифровано</string>
     <string name="status_cleaned">очищено</string>
@@ -39,7 +39,7 @@
     <string name="haptics">виброотклик</string>
     <string name="on">вкл</string>
     <string name="off">выкл</string>
-    <string name="about">записывать, а очистку и расшифровку доверить своему компьютеру</string>
+    <string name="about">записывает и расшифровывает на телефоне; облачная папка — по желанию</string>
     <string name="credits">Pierre Gallaz · разработано с Claude Code</string>
     <string name="cloud_hint">Записи остаются на этом телефоне, и телефон сам расшифровывает их с помощью Whisper (модель загружается один раз). Облачная папка не обязательна (WebDAV: kDrive, Nextcloud…): тогда каждая запись также отправляется туда, и если на вашем компьютере запущен небольшой воркер из репозитория приложения, он берёт на себя очистку и расшифровку гораздо более крупной моделью; расшифровка и очищенный звук возвращаются сюда. Ничего не уходит в Google.</string>
     <string name="cloud_setup">настроить облачную папку</string>
@@ -67,7 +67,7 @@
     <string name="transcript_needs_folder">расшифровки нет: записи остаются на этом телефоне. Нажмите, чтобы настроить облачную папку, через которую компьютер их расшифрует.</string>
     <string name="local_only_phone">только на этом телефоне — расшифровка здесь, ничего не уходит с телефона</string>
     <string name="processing">кто расшифровывает</string>
-    <string name="processing_phone">этот телефон (whisper)</string>
+    <string name="processing_phone">этот телефон</string>
     <string name="processing_cloud">мой компьютер, через облачную папку</string>
     <string name="processing_off">никто</string>
     <string name="model">модель на телефоне (больше = лучше, медленнее)</string>
@@ -107,18 +107,35 @@
     <string name="quality_high_hint">вчетверо медленнее</string>
     <string name="quality_normal">обычная</string>
     <string name="quality_high">тщательная</string>
-    <string name="cloud_hint_export">Записи остаются на этом телефоне, и он сам расшифровывает их с помощью Whisper (модель загружается один раз). Облачная папка необязательна (WebDAV: kDrive, Nextcloud…): телефон копирует туда каждую запись вместе с расшифровкой и очищенной копией для прослушивания. Это выгрузка — ничего не возвращается. Ничего не идёт в Google.</string>
+    <string name="cloud_hint_export">Записи остаются на этом телефоне, и он сам их расшифровывает (модель загружается один раз). Облачная папка необязательна (WebDAV: kDrive, Nextcloud…): каждая запись копируется туда вместе с расшифровкой и очищенной копией. Оттуда ничего не забирается, и ничего не уходит в Google.</string>
     <string name="cloud_guide_export">Как хранить записи в kDrive (Infomaniak), шаг за шагом\n1. Откройте kDrive в браузере. В адресе после /drive/ стоит номер — например ksuite.infomaniak.com/kdrive/app/drive/123456/… — этого номера приложению достаточно как сервера.\n2. Имя пользователя: адрес почты, с которым вы входите в Infomaniak.\n3. Пароль: ваш пароль Infomaniak. При двухфакторном входе создайте пароль приложения (Infomaniak Manager → Безопасность → Пароли приложений).\n4. Приложение создаёт папку Recordings в корне kDrive и кладёт туда каждую запись с небольшим файлом .json рядом. Переименование или удаление в приложении повторяется в папке.\n5. Расшифровка и очищенная копия добавляются, как только телефон их сделает. Папка — это выгрузка: оттуда ничего никогда не забирается.\nNextcloud и любой другой сервер WebDAV работают так же: укажите полный адрес https:// как сервер.</string>
-    <string name="summary_title">основные пункты</string>
+    <string name="summary_title">основные мысли</string>
     <string name="phase_summary">записываю основные мысли, %d %%</string>
     <string name="summary_on_phone">записывать и основные мысли (beta)</string>
     <string name="summary_needs_memory">в телефоне %d ГБ: этого мало</string>
     <string name="summarise_now">записать основные мысли (beta)</string>
     <string name="export_credentials">экспортировать учётные данные</string>
-    <string name="export_credentials_hint">файл для настройки другого устройства или настольных приложений — в нём пароль</string>
+    <string name="export_credentials_hint">файл для настройки другого устройства или приложения — в нём пароль</string>
     <string name="import_credentials">импортировать учётные данные</string>
     <string name="credentials_imported">учётные данные импортированы</string>
     <string name="credentials_imported_from">сервер и логин взяты из %1$s</string>
     <string name="credentials_not_a_file">это не файл учётных данных Reader\'s</string>
     <string name="credentials_nothing">в этом файле нет ничего для %1$s</string>
+    <string name="error_model_missing">модель не найдена — повторите, чтобы загрузить её</string>
+    <string name="error_no_connection">нет соединения</string>
+    <string name="error_download_http">загрузка отклонена (HTTP %1$d)</string>
+    <string name="error_download_cut">загрузка прервана — повторите, чтобы продолжить</string>
+    <string name="error_no_space">недостаточно места: нужно %1$d МБ</string>
+    <string name="error_no_audio">в этом файле нет звука</string>
+    <string name="error_transcription">ошибка расшифровки: %1$s</string>
+    <string name="error_download">ошибка загрузки: %1$s</string>
+    <string name="size_mb">%1$d МБ</string>
+    <string name="synced_at">синхронизировано в %1$s</string>
+    <string name="error_login">неверное имя пользователя или пароль</string>
+    <string name="error_server_http">сервер ответил ошибкой (HTTP %1$d)</string>
+    <string name="error_method">этот телефон не может отправить запрос %1$s</string>
+    <string name="error_sync">ошибка синхронизации: %1$s</string>
+    <string name="error_upload">ошибка отправки: %1$s</string>
+    <string name="error_worker">компьютер не смог её обработать</string>
+    <string name="error_worker_says">компьютер сообщает: %1$s</string>
 </resources>

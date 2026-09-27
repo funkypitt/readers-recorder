@@ -13,8 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
+import java.util.Date
 
 class App : Application() {
     // lazy: the provider and the widget can run before Application.onCreate
@@ -52,11 +51,11 @@ class App : Application() {
         scope.launch {
             if (syncLock.isLocked) return@launch
             syncLock.withLock {
-                syncing.value = true; status.value = "syncing…"
+                syncing.value = true; status.value = getString(R.string.syncing)
                 status.value = try {
-                    val r = Sync.run(store, s)
-                    "synced " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")) + listOf(r.uploaded to "↑", r.transcripts to "✎", r.cleaned to "♪").filter { it.first > 0 }.joinToString("") { " ${it.first}${it.second}" }
-                } catch (e: Exception) { e.message ?: "sync failed" }
+                    val r = Sync.run(this@App, store, s)
+                    getString(R.string.synced_at, android.text.format.DateFormat.getTimeFormat(this@App).format(Date())) + listOf(r.uploaded to "↑", r.transcripts to "✎", r.cleaned to "♪").filter { it.first > 0 }.joinToString("") { " ${it.first}${it.second}" }
+                } catch (e: Exception) { Errors.describe(this@App, e, R.string.error_sync) }
                 syncing.value = false
             }
         }
