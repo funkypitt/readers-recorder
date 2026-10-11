@@ -18,6 +18,10 @@ WebDAV folder. Text only, six languages; one of the
 * Transcription runs on the phone: normal (Whisper small, 190 MB, the default) or high quality,
   much slower (large-v3-turbo, 574 MB). The model is fetched once. The language is the phone's,
   English, or detected.
+* Paragraphs where the speech breathes and where the voice changes: a small voice model (six
+  megabytes, in the app) looks at the sound around each gap between two lines and says whether
+  another person speaks after it — a question and its answer become two paragraphs, with no
+  speaker labels; pauses and long paragraphs cut the rest, as on the desktop.
 * A cleaned listening copy is made beside the original: 60 Hz high-pass, −19 LUFS, no compression.
 * Main points (beta, off by default): a model of about 2 GB, fetched on the first tap; a phone
   with less than about 6 GB of memory is refused the option.

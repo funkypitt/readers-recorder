@@ -30,6 +30,7 @@ import com.freedomfighter.readers.speech.whisper.Paragraphs
 import com.freedomfighter.readers.speech.whisper.Prompts
 import com.freedomfighter.readers.speech.whisper.Segment
 import com.freedomfighter.readers.speech.whisper.Vad
+import com.freedomfighter.readers.speech.whisper.Voices
 import com.freedomfighter.readers.speech.whisper.WhisperLib
 import com.freedomfighter.readers.speech.whisper.WhisperSession
 import kotlinx.coroutines.CoroutineScope
@@ -149,7 +150,7 @@ class ProcessService : Service() {
         val segments = ArrayList<Segment>()
         var detected = ""
         var aborted = false
-        handle.use { WhisperSession(handle.path, Vad.modelPath(this)).use { session ->
+        handle.use { WhisperSession(handle.path, Vad.modelPath(this), Voices.load(this)).use { session ->
             Decode16k.chunks(this, src, CHUNK_SECONDS) { pcm, startMs ->
                 if (cancelled.get()) { aborted = true; return@chunks false }
                 val chunkMs = pcm.size / 16L
