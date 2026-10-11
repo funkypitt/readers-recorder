@@ -13,7 +13,7 @@ object Credentials {
     const val SECTION = "readers-recorder"
     /** Reader's Notes keeps the same kind of account: its server and login do for us too (not its folder). */
     const val FALLBACK = "readers-notes"
-    const val FILE_NAME = "readers-credentials-recorder.json"
+    const val FILE_NAME = "readers-recorder-credentials.json"
 
     /** What a file brings; null = not in the file, keep what is set. */
     data class Account(val server: String?, val folder: String?, val username: String?, val password: String?)

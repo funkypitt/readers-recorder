@@ -118,6 +118,8 @@
     <string name="summarise_now">write the main points (beta)</string>
     <string name="export_credentials">export credentials</string>
     <string name="export_credentials_hint">a file to set up another device or app — it contains the password</string>
+    <string name="export_saved">saved as %1$s</string>
+    <string name="share_export">share this file…</string>
     <string name="import_credentials">import credentials</string>
     <string name="credentials_imported">credentials imported</string>
     <string name="credentials_imported_from">server and login taken from %1$s</string>

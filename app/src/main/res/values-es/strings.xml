@@ -116,6 +116,8 @@
     <string name="summarise_now">escribir los puntos principales (beta)</string>
     <string name="export_credentials">exportar credenciales</string>
     <string name="export_credentials_hint">un archivo para configurar otro dispositivo u otra app — contiene la contraseña</string>
+    <string name="export_saved">guardado como %1$s</string>
+    <string name="share_export">compartir este archivo…</string>
     <string name="import_credentials">importar credenciales</string>
     <string name="credentials_imported">credenciales importadas</string>
     <string name="credentials_imported_from">servidor y usuario tomados de %1$s</string>

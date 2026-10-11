@@ -15,6 +15,8 @@ class CredentialsTest {
         assertEquals("Recordings", root.getJSONObject("readers-recorder").getString("folder"))
     }
 
+    @Test fun theExportIsNamedAfterTheApp() { assertEquals("readers-recorder-credentials.json", Credentials.FILE_NAME) }
+
     @Test fun roundTrip() {
         val i = Credentials.read(Credentials.build("https://srv", "Recordings", "u", "pw"))
         assertFalse(i.fromFallback); assertEquals(Credentials.Account("https://srv", "Recordings", "u", "pw"), i.account)

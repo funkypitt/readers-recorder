@@ -116,6 +116,8 @@
     <string name="summarise_now">записать основные мысли (beta)</string>
     <string name="export_credentials">экспортировать учётные данные</string>
     <string name="export_credentials_hint">файл для настройки другого устройства или приложения — в нём пароль</string>
+    <string name="export_saved">сохранено как %1$s</string>
+    <string name="share_export">поделиться этим файлом…</string>
     <string name="import_credentials">импортировать учётные данные</string>
     <string name="credentials_imported">учётные данные импортированы</string>
     <string name="credentials_imported_from">сервер и логин взяты из %1$s</string>
