@@ -33,6 +33,15 @@
     <string name="settings">definições</string>
     <string name="theme_dark">branco sobre preto</string>
     <string name="theme_light">preto sobre branco</string>
+    <string name="theme_system">como o telefone</string>
+    <string name="theme_lavande">lavanda</string>
+    <string name="theme_sauge">sálvia</string>
+    <string name="theme_nordique">nórdico</string>
+    <string name="theme_terracotta">terracota</string>
+    <string name="theme_coquette">coquete</string>
+    <string name="theme_militante">militante</string>
+    <string name="theme_torride">tórrido</string>
+    <string name="theme_nature">natureza</string>
     <string name="colours">cores</string>
     <string name="text_size">tamanho do texto</string>
     <string name="font">tipo de letra</string>

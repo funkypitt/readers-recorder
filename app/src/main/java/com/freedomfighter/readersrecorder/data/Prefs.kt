@@ -5,7 +5,8 @@ import android.content.SharedPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-enum class ThemeMode { DARK, LIGHT, SYSTEM }
+/** The inks, the phone's choice between them, then the Plume palettes (see [Palettes]). */
+enum class ThemeMode { DARK, LIGHT, SYSTEM, LAVANDE, SAUGE, NORDIQUE, TERRACOTTA, COQUETTE, MILITANTE, TORRIDE, NATURE }
 enum class FontChoice { SERIF, SANS, MONO }
 enum class TextSize { SMALL, MEDIUM, LARGE }
 enum class Align { LEFT, CENTER }
@@ -90,10 +91,8 @@ class Prefs(context: Context) {
     fun setCleanOnPhone(v: Boolean) = sp.edit().putBoolean("clean_on_phone", v).apply()
     fun setSummaryOnPhone(v: Boolean) = sp.edit().putBoolean("summary_on_phone", v)
         .apply { if (v && !settings.value.summaryOnPhone) putLong("summary_since", System.currentTimeMillis()) }.apply()
-    fun toggleTheme(systemIsDark: Boolean) {
-        val dark = when (_settings.value.theme) { ThemeMode.DARK -> true; ThemeMode.LIGHT -> false; ThemeMode.SYSTEM -> systemIsDark }
-        setTheme(if (dark) ThemeMode.LIGHT else ThemeMode.DARK)
-    }
+    /** One tap: the next theme, round and round (the inks first, then the palettes). */
+    fun nextTheme() = setTheme(Palettes.next(_settings.value.theme))
 
     companion object {
         /** "123456" → the kDrive WebDAV root; a bare host gets https://; anything else is kept. */

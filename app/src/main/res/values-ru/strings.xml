@@ -33,6 +33,15 @@
     <string name="settings">настройки</string>
     <string name="theme_dark">белое на чёрном</string>
     <string name="theme_light">чёрное на белом</string>
+    <string name="theme_system">как телефон</string>
+    <string name="theme_lavande">лаванда</string>
+    <string name="theme_sauge">шалфей</string>
+    <string name="theme_nordique">северный</string>
+    <string name="theme_terracotta">терракота</string>
+    <string name="theme_coquette">кокетка</string>
+    <string name="theme_militante">активистка</string>
+    <string name="theme_torride">знойный</string>
+    <string name="theme_nature">природа</string>
     <string name="colours">цвета</string>
     <string name="text_size">размер текста</string>
     <string name="font">шрифт</string>

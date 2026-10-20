@@ -8,18 +8,17 @@ import android.graphics.Color
 import android.os.Build
 import android.widget.RemoteViews
 import com.freedomfighter.readersrecorder.R
+import com.freedomfighter.readersrecorder.data.Palettes
 
 /** Shared by the standard widgets: the app's two colours, the launch intents, the refresh. */
 object WidgetUi {
-    /** (background, foreground, dim) following the app's theme setting. */
+    /** (background, foreground, dim) following the app's theme setting: the same palette as the screens. */
     fun colors(context: Context): Triple<Int, Int, Int> {
-        val theme = context.getSharedPreferences("settings", Context.MODE_PRIVATE).getString("theme", "DARK")
+        val theme = Palettes.parse(context.getSharedPreferences("settings", Context.MODE_PRIVATE).getString("theme", null))
         val systemDark = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-        val dark = when (theme) { "LIGHT" -> false; "SYSTEM" -> systemDark; else -> true }
-        val bg = if (dark) Color.BLACK else Color.WHITE
-        val fg = if (dark) Color.WHITE else Color.BLACK
-        val dim = if (dark) Color.argb(140, 255, 255, 255) else Color.argb(140, 0, 0, 0)
-        return Triple(bg, fg, dim)
+        val p = Palettes.of(theme, systemDark)
+        val fg = p.fg.toInt()
+        return Triple(p.bg.toInt(), fg, Color.argb(140, Color.red(fg), Color.green(fg), Color.blue(fg)))
     }
 
 

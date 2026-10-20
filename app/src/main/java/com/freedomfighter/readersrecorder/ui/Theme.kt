@@ -15,10 +15,14 @@ import com.freedomfighter.readersrecorder.data.Align
 import com.freedomfighter.readersrecorder.data.FontChoice
 import com.freedomfighter.readersrecorder.data.Settings
 import com.freedomfighter.readersrecorder.data.TextSize
-import com.freedomfighter.readersrecorder.data.ThemeMode
+import com.freedomfighter.readersrecorder.data.Palettes
 
-/** Two colours only. `dim` is the foreground at reduced opacity for secondary lines and rules. */
-data class ReaderColors(val bg: Color, val fg: Color) {
+/**
+ * The colours of a theme: a background, a text colour, and the accent that fills the inverted
+ * rows (the text colour itself in the two inks). `dim` is the text at reduced opacity for
+ * secondary lines and rules.
+ */
+data class ReaderColors(val bg: Color, val fg: Color, val accent: Color = fg, val onAccent: Color = bg) {
     val dim: Color get() = fg.copy(alpha = 0.55f)
     val rule: Color get() = fg.copy(alpha = 0.25f)
     val isDark: Boolean get() = bg.luminance() < 0.5f
@@ -45,12 +49,8 @@ val LocalHaptics = compositionLocalOf { true }
 @Composable
 fun ReaderTheme(settings: Settings, content: @Composable () -> Unit) {
     val systemDark = isSystemInDarkTheme()
-    val dark = when (settings.theme) {
-        ThemeMode.DARK -> true
-        ThemeMode.LIGHT -> false
-        ThemeMode.SYSTEM -> systemDark
-    }
-    val colors = if (dark) ReaderColors(Color.Black, Color.White) else ReaderColors(Color.White, Color.Black)
+    val p = Palettes.of(settings.theme, systemDark)
+    val colors = ReaderColors(Color(p.bg), Color(p.fg), Color(p.accent), Color(p.onAccent))
     val family = when (settings.font) {
         FontChoice.SERIF -> FontFamily.Serif
         FontChoice.SANS -> FontFamily.SansSerif

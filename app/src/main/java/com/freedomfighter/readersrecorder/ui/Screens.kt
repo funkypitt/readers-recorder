@@ -50,9 +50,11 @@ import com.freedomfighter.readersrecorder.RecordService
 import com.freedomfighter.readersrecorder.data.Credentials
 import com.freedomfighter.readersrecorder.data.CredentialsShare
 import com.freedomfighter.readersrecorder.data.FontChoice
+import com.freedomfighter.readersrecorder.data.Palettes
 import com.freedomfighter.readersrecorder.data.Prefs
 import com.freedomfighter.readersrecorder.data.Recording
 import com.freedomfighter.readersrecorder.data.TextSize
+import com.freedomfighter.readersrecorder.data.ThemeMode
 import com.freedomfighter.readersrecorder.sync.Sync
 import com.freedomfighter.readersrecorder.ProcessService
 import com.freedomfighter.readersrecorder.PlayerService
@@ -84,6 +86,15 @@ private val RECOMMENDED = Models.HIGH
 
 @Composable
 fun kindLabel(kind: String): String = stringResource(when (kind) { "lecture" -> R.string.kind_lecture; "conversation" -> R.string.kind_conversation; else -> R.string.kind_memo })
+
+/** The name of a theme, as the settings row and the menu show it. */
+@Composable
+fun themeName(m: ThemeMode): String = stringResource(when (m) {
+    ThemeMode.DARK -> R.string.theme_dark; ThemeMode.LIGHT -> R.string.theme_light; ThemeMode.SYSTEM -> R.string.theme_system
+    ThemeMode.LAVANDE -> R.string.theme_lavande; ThemeMode.SAUGE -> R.string.theme_sauge; ThemeMode.NORDIQUE -> R.string.theme_nordique
+    ThemeMode.TERRACOTTA -> R.string.theme_terracotta; ThemeMode.COQUETTE -> R.string.theme_coquette; ThemeMode.MILITANTE -> R.string.theme_militante
+    ThemeMode.TORRIDE -> R.string.theme_torride; ThemeMode.NATURE -> R.string.theme_nature
+})
 
 @Composable
 fun statusLabel(r: Recording, configured: Boolean): String = (when {
@@ -186,7 +197,8 @@ fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
             })) {
                 TextRow("●  " + stringResource(R.string.record), inverted = true)
             }
-            Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars).background(if (live.recording || true) colors.fg else colors.bg).fillMaxWidth())
+            // the strip under the navigation bar continues the inverted row above it
+            Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars).background(colors.accent).fillMaxWidth())
         }
         rowMenu?.let { id ->
             val r = all.firstOrNull { it.id == id }
@@ -218,7 +230,7 @@ fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
             if (settings.configured) add(MenuItem(stringResource(R.string.sync_now)) { app.sync() })
             add(MenuItem(kindLabel(settings.kind), secondary = stringResource(R.string.next_kind)) { app.prefs.setKind(Prefs.KINDS[(Prefs.KINDS.indexOf(settings.kind) + 1) % Prefs.KINDS.size]) })
         }, onDismiss = { menu = false }, footer = listOf(
-            MenuItem(if (colors.isDark) stringResource(R.string.theme_light) else stringResource(R.string.theme_dark)) { app.prefs.toggleTheme(colors.isDark) },
+            MenuItem(themeName(Palettes.next(settings.theme))) { app.prefs.nextTheme() },
             MenuItem(stringResource(R.string.settings)) { nav.push(Screen.Settings()) }
         ))
     }
@@ -299,10 +311,10 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
                         T(RecordService.clock(position.toLong()) + " / " + RecordService.clock((if (duration > 0) duration else r.durationMs.toInt()).toLong()), maxLines = 1, align = TextAlign.Start)
                         Small(r.whenPrefix + kindLabel(r.kind) + " · " + statusLabel(r, settings.configured) + (if (r.cleaned && app.store.cleanAudio(r).exists()) " · " + stringResource(R.string.playing_cleaned) else ""), maxLines = 2)
                     }
-                    Box(Modifier.padding(start = 16.dp).background(if (playing) colors.fg else Color.Transparent).noRippleClickable {
+                    Box(Modifier.padding(start = 16.dp).background(if (playing) colors.accent else Color.Transparent).noRippleClickable {
                         PlayerService.toggle(context, r.id)
                     }.padding(horizontal = 18.dp, vertical = 10.dp)) {
-                        T(if (playing) "❚❚" else "▶", size = typo.tile * 0.9f, color = if (playing) colors.bg else colors.fg, align = TextAlign.Center)
+                        T(if (playing) "❚❚" else "▶", size = typo.tile * 0.9f, color = if (playing) colors.onAccent else colors.fg, align = TextAlign.Center)
                     }
                 }
                 Box(Modifier.padding(horizontal = rowPadH).fillMaxWidth().height(24.dp).noRippleClickable { }, contentAlignment = Alignment.Center) {
@@ -519,7 +531,7 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
                 }
                 TextRow(kindLabel(s.kind), secondary = stringResource(R.string.next_kind)) { app.prefs.setKind(Prefs.KINDS[(Prefs.KINDS.indexOf(s.kind) + 1) % Prefs.KINDS.size]) }
                 Rule(Modifier.padding(vertical = 8.dp))
-                TextRow(if (colors.isDark) stringResource(R.string.theme_dark) else stringResource(R.string.theme_light), secondary = stringResource(R.string.colours)) { app.prefs.toggleTheme(colors.isDark) }
+                TextRow(themeName(s.theme), secondary = stringResource(R.string.colours)) { app.prefs.nextTheme() }
                 TextRow(when (s.textSize) { TextSize.SMALL -> "S"; TextSize.MEDIUM -> "M"; TextSize.LARGE -> "L" }, secondary = stringResource(R.string.text_size)) {
                     app.prefs.setTextSize(when (s.textSize) { TextSize.SMALL -> TextSize.MEDIUM; TextSize.MEDIUM -> TextSize.LARGE; TextSize.LARGE -> TextSize.SMALL })
                 }

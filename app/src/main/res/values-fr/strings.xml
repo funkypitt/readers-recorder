@@ -33,6 +33,15 @@
     <string name="settings">réglages</string>
     <string name="theme_dark">blanc sur noir</string>
     <string name="theme_light">noir sur blanc</string>
+    <string name="theme_system">comme le téléphone</string>
+    <string name="theme_lavande">lavande</string>
+    <string name="theme_sauge">sauge</string>
+    <string name="theme_nordique">nordique</string>
+    <string name="theme_terracotta">terracotta</string>
+    <string name="theme_coquette">coquette</string>
+    <string name="theme_militante">militante</string>
+    <string name="theme_torride">torride</string>
+    <string name="theme_nature">nature</string>
     <string name="colours">couleurs</string>
     <string name="text_size">taille du texte</string>
     <string name="font">police</string>
