@@ -6,6 +6,10 @@ import android.media.MediaPlayer
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -157,7 +161,10 @@ fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
                 items(recordings, key = { it.id }) { r ->
                     val isLive = r.id == live.id && live.recording
                     val checked = r.id in selected
+                    // the tap and the long press live on the box; the row's card shows the finger through the shared source
+                    val interaction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                     Box(Modifier.fillMaxWidth().pressable(
+                        interaction = interaction,
                         onClick = {
                             when {
                                 isLive -> nav.push(Screen.Record)
@@ -170,6 +177,7 @@ fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
                         TextRow(
                             (if (selecting && !isLive) (if (checked) "☑  " else "☐  ") else "") + r.title,
                             inverted = isLive,
+                            interaction = interaction,
                             secondary = if (isLive) stringResource(R.string.notif_recording) + " · " + RecordService.clock(live.elapsedMs)
                             else r.whenPrefix + RecordService.clock(r.durationMs) + " · " + kindLabel(r.kind) + " · " + statusLabel(r, settings.configured)
                         )
@@ -197,8 +205,9 @@ fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
             })) {
                 TextRow("●  " + stringResource(R.string.record), inverted = true)
             }
-            // the strip under the navigation bar continues the inverted row above it
-            Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars).background(colors.accent).fillMaxWidth())
+            // the strip under the navigation bar continues the inverted row above it; with tiles that
+            // row is a rounded card with a margin, so the strip stays the page
+            Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars).background(if (colors.tiles) colors.bg else colors.accent).fillMaxWidth())
         }
         rowMenu?.let { id ->
             val r = all.firstOrNull { it.id == id }
@@ -255,14 +264,17 @@ fun RecordScreen(nav: Nav, app: App) {
     Page {
         Column(Modifier.fillMaxSize()) {
             ScreenTitle(stringResource(if (live.paused) R.string.notif_paused else R.string.notif_recording), onBack = { nav.pop() })
-            Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = rowPadH), verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center) {
-                T(RecordService.clock(live.elapsedMs), size = typo.big, align = TextAlign.Start, maxLines = 1)
-                // A level line: the loudest sample of the last quarter second, as a bar.
-                Progress(if (live.paused) 0f else (live.amplitude / 20000f).coerceIn(0f, 1f), Modifier.padding(top = 10.dp, bottom = 18.dp))
-                Small(current?.title ?: "", maxLines = 1)
+            Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center) {
+                Column(Modifier.fillMaxWidth().padding(horizontal = rowPadH)) {
+                    T(RecordService.clock(live.elapsedMs), size = typo.big, align = TextAlign.Start, maxLines = 1)
+                    // A level line: the loudest sample of the last quarter second, as a bar. It reads, it is not tapped: on the page, not a card.
+                    Progress(if (live.paused) 0f else (live.amplitude / 20000f).coerceIn(0f, 1f), Modifier.padding(top = 10.dp, bottom = 18.dp))
+                    Small(current?.title ?: "", maxLines = 1)
+                }
                 VSpace(18.dp)
                 val kind = current?.kind ?: settings.kind
-                TextRow(kindLabel(kind), secondary = stringResource(R.string.kind_hint), size = typo.title) {
+                // the inks keep the row inside the page's inset; with tiles the card takes the standard margin
+                TextRow(kindLabel(kind), Modifier.padding(horizontal = if (colors.tiles) 0.dp else rowPadH), secondary = stringResource(R.string.kind_hint), size = typo.title) {
                     val next = Prefs.KINDS[(Prefs.KINDS.indexOf(kind) + 1) % Prefs.KINDS.size]
                     app.prefs.setKind(next); current?.let { app.store.update(it.copy(kind = next)) }
                 }
@@ -306,14 +318,26 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
             ScreenTitle(r.title, onBack = { nav.pop() }, trailing = "⋯", onTrailing = { menu = true })
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 // ---- player: one line, tap to play or pause; the rule is the position, tap to seek ----
-                Row(Modifier.fillMaxWidth().padding(horizontal = rowPadH, vertical = rowPadV * 0.6f), verticalAlignment = Alignment.CenterVertically) {
+                // with tiles the ▶ card ends where the list's cards end, at the tile margin
+                Row(Modifier.fillMaxWidth().padding(start = rowPadH, end = if (colors.tiles) tileGap else rowPadH, top = rowPadV * 0.6f, bottom = rowPadV * 0.6f), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         T(RecordService.clock(position.toLong()) + " / " + RecordService.clock((if (duration > 0) duration else r.durationMs.toInt()).toLong()), maxLines = 1, align = TextAlign.Start)
                         Small(r.whenPrefix + kindLabel(r.kind) + " · " + statusLabel(r, settings.configured) + (if (r.cleaned && app.store.cleanAudio(r).exists()) " · " + stringResource(R.string.playing_cleaned) else ""), maxLines = 2)
                     }
-                    Box(Modifier.padding(start = 16.dp).background(if (playing) colors.accent else Color.Transparent).noRippleClickable {
-                        PlayerService.toggle(context, r.id)
-                    }.padding(horizontal = 18.dp, vertical = 10.dp)) {
+                    // the one tappable thing of the player: the accent while it plays, else a card with tiles, nothing in the inks
+                    val interaction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                    val pressed by interaction.collectIsPressedAsState()
+                    val playBg = when {
+                        playing -> colors.accent
+                        colors.tiles && pressed -> colors.press
+                        colors.tiles -> colors.tile
+                        else -> Color.Transparent
+                    }
+                    Box(Modifier.padding(start = 16.dp)
+                        .then(if (colors.tiles) Modifier.clip(RoundedCornerShape(tileCorner)) else Modifier)
+                        .background(playBg)
+                        .clickable(interactionSource = interaction, indication = null) { PlayerService.toggle(context, r.id) }
+                        .padding(horizontal = 18.dp, vertical = 10.dp)) {
                         T(if (playing) "❚❚" else "▶", size = typo.tile * 0.9f, color = if (playing) colors.onAccent else colors.fg, align = TextAlign.Center)
                     }
                 }
