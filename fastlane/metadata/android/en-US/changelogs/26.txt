@@ -1,0 +1,1 @@
+With a colour theme, cards side by side are now as far apart as they are from the edge.

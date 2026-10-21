@@ -110,10 +110,28 @@ val tileCorner = 18.dp
 /** True inside a sheet or a card: the rows in it are flat, the card is the surface. */
 val LocalInTile = compositionLocalOf { false }
 
+/** Cards side by side: a card drops half of its page margin on the side it shares with a neighbour. */
+data class CardEdges(val start: Boolean = true, val end: Boolean = true)
+val LocalCardEdges = compositionLocalOf { CardEdges() }
+
+/** Wrap each card of a row: the first one with `end = false`, the last with `start = false`, the middle ones with both false. */
+@Composable
+fun Side(start: Boolean = true, end: Boolean = true, content: @Composable () -> Unit) =
+    CompositionLocalProvider(LocalCardEdges provides CardEdges(start, end), content = content)
+
+/** The horizontal margins of a card on the page: full at the page edge, half towards a neighbour. */
+@Composable
+fun cardMargins(): Pair<Dp, Dp> {
+    val e = LocalCardEdges.current
+    return Pair(if (e.start) tileGap else tileGap / 2, if (e.end) tileGap else tileGap / 2)
+}
+
 /** The card of a hand-made tappable block (not a TextRow): margin, rounded corners, surface; nothing in the inks. */
 @Composable
-fun Modifier.tileCard(bg: Color = LocalColors.current.tile, vertical: Dp = 4.dp): Modifier =
-    if (LocalColors.current.tiles && !LocalInTile.current) this.padding(horizontal = tileGap, vertical = vertical).clip(RoundedCornerShape(tileCorner)).background(bg) else this
+fun Modifier.tileCard(bg: Color = LocalColors.current.tile, vertical: Dp = 4.dp): Modifier {
+    val m = cardMargins()
+    return if (LocalColors.current.tiles && !LocalInTile.current) this.padding(start = m.first, end = m.second, top = vertical, bottom = vertical).clip(RoundedCornerShape(tileCorner)).background(bg) else this
+}
 
 fun Modifier.noRippleClickable(enabled: Boolean = true, onClick: () -> Unit): Modifier = this.then(
     Modifier.clickable(
@@ -153,7 +171,8 @@ fun TextRow(
     val fg = if (inverted) colors.onAccent else colors.fg
     val dim = if (inverted) colors.onAccent.copy(alpha = 0.6f) else colors.dim
     // a card: outer margin, rounded, then the same text inset as the page's free text
-    val shape = if (tiles) Modifier.padding(horizontal = if (inTile) 0.dp else tileGap, vertical = if (inTile) 0.dp else 4.dp).clip(RoundedCornerShape(if (inTile) 0.dp else tileCorner)) else Modifier
+    val m = cardMargins()
+    val shape = if (tiles) Modifier.padding(start = if (inTile) 0.dp else m.first, end = if (inTile) 0.dp else m.second, top = if (inTile) 0.dp else 4.dp, bottom = if (inTile) 0.dp else 4.dp).clip(RoundedCornerShape(if (inTile) 0.dp else tileCorner)) else Modifier
     Column(
         modifier
             .fillMaxWidth()

@@ -281,8 +281,8 @@ fun RecordScreen(nav: Nav, app: App) {
             }
             Rule()
             Row(Modifier.fillMaxWidth()) {
-                Box(Modifier.weight(1f)) { TextRow(stringResource(if (live.paused) R.string.resume else R.string.pause)) { tick(); if (live.paused) RecordService.resume(context) else RecordService.pause(context) } }
-                Box(Modifier.weight(1f)) { TextRow("■  " + stringResource(R.string.stop), inverted = true) { tick(); RecordService.stop(context); nav.home() } }
+                Box(Modifier.weight(1f)) { Side(end = false) { TextRow(stringResource(if (live.paused) R.string.resume else R.string.pause)) { tick(); if (live.paused) RecordService.resume(context) else RecordService.pause(context) } } }
+                Box(Modifier.weight(1f)) { Side(start = false) { TextRow("■  " + stringResource(R.string.stop), inverted = true) { tick(); RecordService.stop(context); nav.home() } } }
             }
             Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars))
         }
