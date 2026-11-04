@@ -1,0 +1,1 @@
+« make it a note » in a recording's menu: when Reader's Notes is installed, the title, main points and transcript become a new note, with a line that opens the recording again.

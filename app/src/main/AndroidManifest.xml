@@ -13,6 +13,11 @@
     <permission
         android:name="com.freedomfighter.readersrecorder.permission.ACCESS"
         android:protectionLevel="signature" />
+    <!-- « make it a note »: Reader's Notes, when it is installed, takes a recording's text as a new note. -->
+    <uses-permission android:name="com.freedomfighter.readersnotes.permission.ACCESS" />
+    <queries>
+        <package android:name="com.freedomfighter.readersnotes" />
+    </queries>
     <application
         android:name=".App"
         android:allowBackup="true"

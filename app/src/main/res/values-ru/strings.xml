@@ -149,4 +149,6 @@
     <string name="error_upload">ошибка отправки: %1$s</string>
     <string name="error_worker">компьютер не смог её обработать</string>
     <string name="error_worker_says">компьютер сообщает: %1$s</string>
+    <string name="make_note">сделать заметку</string>
+    <string name="make_note_failed">Reader\'s Notes не удалось принять эту заметку</string>
 </resources>

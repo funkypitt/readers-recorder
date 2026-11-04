@@ -151,4 +151,6 @@
     <string name="error_upload">upload failed: %1$s</string>
     <string name="error_worker">the computer could not process it</string>
     <string name="error_worker_says">the computer reports: %1$s</string>
+    <string name="make_note">make it a note</string>
+    <string name="make_note_failed">Reader\'s Notes could not take this note</string>
 </resources>

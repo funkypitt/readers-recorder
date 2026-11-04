@@ -63,6 +63,7 @@ import com.freedomfighter.readersrecorder.sync.Sync
 import com.freedomfighter.readersrecorder.ProcessService
 import com.freedomfighter.readersrecorder.PlayerService
 import com.freedomfighter.readers.speech.summary.SummaryModel
+import com.freedomfighter.readersrecorder.notes.ToNotes
 import com.freedomfighter.readers.speech.whisper.Models
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -217,6 +218,7 @@ fun ListScreen(nav: Nav, app: App, activity: MainActivity) {
                     add(MenuItem(stringResource(R.string.rename)) { renaming = r.id })
                     add(MenuItem(stringResource(R.string.share_audio)) { shareFile(context, app.store.playable(r), "audio/*", r.title) })
                     if (transcript.isNotBlank()) add(MenuItem(stringResource(R.string.share_transcript)) { shareText(context, transcript, r.title) })
+                    makeNoteItem(context, app, r, transcript)?.let { add(it) }
                     add(MenuItem(stringResource(R.string.delete), secondary = if (r.uploaded) stringResource(R.string.delete_hint_server) else null) { deleteMany(listOf(r.id)) })
                     add(MenuItem(stringResource(R.string.select_several)) { selecting = true; selected.clear(); selected.add(r.id) })
                 }, onDismiss = { rowMenu = null })
@@ -373,6 +375,7 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
             add(MenuItem(stringResource(R.string.rename)) { renaming = true })
             add(MenuItem(stringResource(R.string.share_audio)) { shareFile(context, app.store.playable(r), "audio/*", r.title) })
             if (transcript.isNotBlank()) add(MenuItem(stringResource(R.string.share_transcript)) { shareText(context, transcript, r.title) })
+            makeNoteItem(context, app, r, transcript)?.let { add(it) }
             if (settings.configured && !r.uploaded) add(MenuItem(stringResource(R.string.upload_now)) { app.sync() })
             if (settings.configured && r.uploaded && r.error.isNotBlank()) add(MenuItem(stringResource(R.string.retry)) { app.store.update(r.copy(error = "")); app.sync() })
             if (r.mode(settings.processing) == "phone" && !r.transcribed) add(MenuItem(stringResource(R.string.transcribe_now)) { app.store.update(r.copy(error = "")); ProcessService.kick(context) })
@@ -402,6 +405,18 @@ fun shareFile(context: android.content.Context, file: java.io.File, mime: String
     val uri = FileProvider.getUriForFile(context, context.packageName + ".files", file)
     val i = Intent(Intent.ACTION_SEND).setType(mime).putExtra(Intent.EXTRA_STREAM, uri).putExtra(Intent.EXTRA_SUBJECT, title).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     runCatching { context.startActivity(Intent.createChooser(i, null)) }
+}
+
+/** « make it a note », only once there is a transcript and only when Reader's Notes is on the phone. */
+@Composable
+fun makeNoteItem(context: android.content.Context, app: App, r: Recording, transcript: String): MenuItem? {
+    if (transcript.isBlank() || !ToNotes.installed(context)) return null
+    val heading = stringResource(R.string.summary_title)
+    val failed = stringResource(R.string.make_note_failed)
+    return MenuItem(stringResource(R.string.make_note)) {
+        if (!ToNotes.make(context, ToNotes.text(r, app.store.summary(r), heading, transcript)))
+            android.widget.Toast.makeText(context, failed, android.widget.Toast.LENGTH_SHORT).show()
+    }
 }
 
 fun shareText(context: android.content.Context, text: String, title: String) {

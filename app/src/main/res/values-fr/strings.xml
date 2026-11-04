@@ -149,4 +149,6 @@
     <string name="error_upload">échec de l\'envoi : %1$s</string>
     <string name="error_worker">l\'ordinateur n\'a pas pu le traiter</string>
     <string name="error_worker_says">l\'ordinateur signale : %1$s</string>
+    <string name="make_note">en faire une note</string>
+    <string name="make_note_failed">Reader\'s Notes n’a pas pu prendre cette note</string>
 </resources>

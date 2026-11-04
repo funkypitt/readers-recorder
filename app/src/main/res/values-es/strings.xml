@@ -149,4 +149,6 @@
     <string name="error_upload">la subida falló: %1$s</string>
     <string name="error_worker">el ordenador no pudo procesarla</string>
     <string name="error_worker_says">el ordenador informa: %1$s</string>
+    <string name="make_note">convertir en nota</string>
+    <string name="make_note_failed">Reader\'s Notes no pudo recibir esta nota</string>
 </resources>

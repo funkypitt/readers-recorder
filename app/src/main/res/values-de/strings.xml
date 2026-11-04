@@ -149,4 +149,6 @@
     <string name="error_upload">Hochladen fehlgeschlagen: %1$s</string>
     <string name="error_worker">der Computer konnte sie nicht verarbeiten</string>
     <string name="error_worker_says">der Computer meldet: %1$s</string>
+    <string name="make_note">daraus eine Notiz machen</string>
+    <string name="make_note_failed">Reader\'s Notes konnte diese Notiz nicht aufnehmen</string>
 </resources>

@@ -149,4 +149,6 @@
     <string name="error_upload">o envio falhou: %1$s</string>
     <string name="error_worker">o computador não conseguiu processá-la</string>
     <string name="error_worker_says">o computador indica: %1$s</string>
+    <string name="make_note">fazer disto uma nota</string>
+    <string name="make_note_failed">O Reader\'s Notes não conseguiu receber esta nota</string>
 </resources>
