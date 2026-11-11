@@ -243,6 +243,63 @@ def label(spk):
         return str(spk)
 
 
+# ── which language is spoken, over several passages (same rule as the phone's Language.kt) ──
+WINDOW = 30 * 16000      # what whisper looks at for one guess
+PASSAGES, CANDIDATES, SPEECH = 3, 9, 0.4
+SURE, UNLIKELY = 0.7, 0.1
+
+
+def listen_language(model, wav):
+    """Whisper left to itself guesses from the first 30 s, where recordings often begin with
+    noise, a greeting or an accent, and a wrong guess comes back as a fluent translation. So:
+    nine places spread over the recording, the three where Silero hears the most speech, and
+    whisper's language probabilities averaged over them. Returns (language, confidence, probs)
+    or None when no speech was heard."""
+    import numpy as np
+    from faster_whisper.vad import get_speech_timestamps
+    from whisperx.audio import log_mel_spectrogram
+    total = len(wav)
+    if total <= WINDOW:
+        places = [0]
+    else:
+        n = max(1, min(CANDIDATES, total // WINDOW))
+        places = sorted({(total - WINDOW) * (2 * i + 1) // (2 * n) for i in range(n)})
+    shares = []
+    for at in places:
+        w = wav[at:at + WINDOW]
+        try:
+            spoken = sum(t["end"] - t["start"] for t in get_speech_timestamps(w))
+            shares.append((at, spoken / max(1, len(w))))
+        except Exception as e:
+            log(f"  no speech detector ({e}) — passages spread evenly")
+            shares = None
+            break
+    if shares is None:
+        step = max(1.0, len(places) / PASSAGES)
+        chosen = sorted({places[min(len(places) - 1, int(i * step + step / 2))] for i in range(min(PASSAGES, len(places)))})
+    else:
+        ranked = sorted(shares, key=lambda x: -x[1])
+        spoken = [at for at, sh in ranked if sh >= SPEECH][:PASSAGES]
+        chosen = sorted(spoken) or [at for at, sh in ranked[:1] if sh > 0.05]
+    n_mels = model.model.feat_kwargs.get("feature_size") or 80
+    sums, used = {}, 0
+    for at in chosen:
+        w = wav[at:at + WINDOW]
+        feats = log_mel_spectrogram(w, n_mels=n_mels, padding=WINDOW - len(w) if len(w) < WINDOW else 0)
+        res = model.model.model.detect_language(model.model.encode(feats))[0]
+        for token, p in res:
+            code = token[2:-2]
+            sums[code] = sums.get(code, 0.0) + p
+        used += 1
+    if not used:
+        return None
+    probs = {k: v / used for k, v in sums.items()}
+    best = max(probs, key=probs.get)
+    log(f"  language heard: {best} ({probs[best]:.2f}) over {used} passages; "
+        + ", ".join(f"{k} {v:.2f}" for k, v in sorted(probs.items(), key=lambda x: -x[1])[:3]))
+    return best, probs[best], probs
+
+
 def transcribe(audio, language, diarize, args):
     import torch
     import whisperx
@@ -262,14 +319,34 @@ def transcribe(audio, language, diarize, args):
         compute = "float16" if device == "cuda" else "int8"
         model = whisperx.load_model(args.model, device, compute_type=compute, language=language or None)
         wav = whisperx.load_audio(str(audio))
+        # The language found by listening is told to whisper for the whole recording. A language
+        # given by the phone stands unless the recording plainly speaks another — nobody is here
+        # to ask, so the heard one is used and the phone is told which setting gave way.
+        overruled, heard = "", False
+        try:
+            found = listen_language(model, wav)
+        except Exception as e:
+            log(f"  language not found by listening: {e}")
+            found = None
+        if found:
+            best, conf, probs = found
+            if not language:
+                language, heard = best, True
+            elif best != language and conf >= SURE and probs.get(language, 0.0) < UNLIKELY:
+                log(f"  the setting says '{language}', the recording plainly speaks '{best}': using '{best}'")
+                overruled, language, heard = language, best, True
+            else:
+                heard = best == language
         try:
             result = model.transcribe(wav, batch_size=16 if device == "cuda" else 4, language=language or None)
         except IndexError:
             # The VAD found no speech at all (a silent recording): whisperx's pipeline trips on an empty batch.
-            return [], language or "en", False
+            return [], language or "en", False, heard, overruled
         lang = result.get("language") or language or "en"
+        if not language:
+            heard = True   # left to whisper's own guess
         if not result.get("segments"):
-            return [], lang, False
+            return [], lang, False, heard, overruled
         try:
             align_model, meta = whisperx.load_align_model(language_code=lang, device=device)
             result = whisperx.align(result["segments"], align_model, meta, wav, device, return_char_alignments=False)
@@ -291,7 +368,7 @@ def transcribe(audio, language, diarize, args):
         del model
         if device == "cuda":
             torch.cuda.empty_cache()
-        return result["segments"], lang, speakers
+        return result["segments"], lang, speakers, heard, overruled
     finally:
         if locked:
             release_gpu_lock()
@@ -411,11 +488,12 @@ def process(folder, name, names, args):
         # Transcribe the ORIGINAL: Whisper was trained on noisy speech and reads it well, while a
         # denoiser tuned for listening can strip exactly the cues it relies on (seen on a test
         # excerpt: the cleaned file gave hallucinations, the raw one a clean transcript).
-        segments, lang, speakers = transcribe(src, language, kind == "conversation", args)
+        segments, lang, speakers, heard, overruled = transcribe(src, language, kind == "conversation", args)
         log(f"  transcribed in {time.time() - t0:.0f} s ({lang}, {len(segments)} segments)")
         text = paragraphs(segments, speakers) if segments else "(no speech detected)\n"
         folder.write_text(f"{base}.segments.json", json.dumps(
-            {"language": lang, "kind": kind, "speakers": speakers,
+            {"language": lang, "kind": kind, "speakers": speakers, "heard": heard,
+             **({"language_setting": overruled} if overruled else {}),
              "segments": [{"start": round(s["start"], 2), "end": round(s["end"], 2), "text": s.get("text", "").strip(),
                            **({"speaker": s.get("speaker")} if speakers else {})} for s in segments]},
             ensure_ascii=False, indent=1))

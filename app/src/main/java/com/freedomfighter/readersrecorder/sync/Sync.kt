@@ -70,6 +70,12 @@ object Sync {
                 try {
                     if (!r.transcribed && r.base + ".txt" in names) {
                         store.setTranscript(r, dav.get(folder + encodeSegment(r.base + ".txt"))); tr++
+                        // The language the computer heard, said on the recording's page as the phone's own is.
+                        if (r.base + ".segments.json" in names) runCatching {
+                            val o = org.json.JSONObject(dav.get(folder + encodeSegment(r.base + ".segments.json")))
+                            val spoken = o.optString("language")
+                            if (spoken.isNotBlank()) store.update(r.id) { it.copy(spoken = spoken, heard = o.optBoolean("heard", true), overruled = o.optString("language_setting")) }
+                        }
                     }
                     if (!store.summaryFile(r).exists() && r.base + ".resume.txt" in names) {
                         store.setSummary(r, dav.get(folder + encodeSegment(r.base + ".resume.txt")))
@@ -105,7 +111,8 @@ object Sync {
 
     fun meta(r: Recording, s: Settings): JSONObject = JSONObject()
         .put("title", r.title).put("kind", r.kind).put("createdAt", r.createdAt).put("durationMs", r.durationMs)
-        .put("language", s.language).put("app", "readers-recorder")
+        // "" = the computer finds the language by listening, as the phone does.
+        .put("language", r.chosenLanguage(s.language).first).put("app", "readers-recorder")
 
     /** Remove the recording's files from the server (best effort). */
     fun deleteRemote(r: Recording, s: Settings) {

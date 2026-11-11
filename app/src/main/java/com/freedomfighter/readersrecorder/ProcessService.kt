@@ -22,9 +22,12 @@ import com.freedomfighter.readers.speech.audio.Decode16k
 import com.freedomfighter.readersrecorder.audio.Normalize
 import com.freedomfighter.readers.speech.audio.Pcm
 import com.freedomfighter.readers.speech.audio.Resample
+import com.freedomfighter.readersrecorder.data.LanguageChoice
+import com.freedomfighter.readersrecorder.data.Prefs
 import com.freedomfighter.readersrecorder.data.Recording
 import com.freedomfighter.readers.speech.summary.SummaryModel
 import com.freedomfighter.readers.speech.summary.Summariser
+import com.freedomfighter.readers.speech.whisper.Language
 import com.freedomfighter.readers.speech.whisper.Models
 import com.freedomfighter.readers.speech.whisper.Paragraphs
 import com.freedomfighter.readers.speech.whisper.Prompts
@@ -90,7 +93,7 @@ class ProcessService : Service() {
                 val r = app.store.recordings.value.firstOrNull {
                     needsWork(app, it, s) && it.id != RecordService.Live.id && it.id !in summaryFailedHere
                 } ?: break
-                Live.id = r.id; Live.percent = 0
+                Live.id = r.id; Live.percent = 0; Live.language = ""
                 try {
                     withContext(Dispatchers.Default) { processOne(app, r, s.language, s.model) }
                 } catch (e: Exception) {
@@ -99,7 +102,7 @@ class ProcessService : Service() {
             }
         } finally {
             ticker.cancel()
-            Live.id = ""; Live.phase = ""; Live.percent = 0
+            Live.id = ""; Live.phase = ""; Live.percent = 0; Live.language = ""
             runCatching { if (lock?.isHeld == true) lock?.release() }
             running = false
             app.sync()
@@ -132,9 +135,12 @@ class ProcessService : Service() {
         val store = app.store
         // Already transcribed: the only thing left is the summary, which the option may have been
         // turned on long after the recording was made.
-        if (r.transcribed) { runSummary(app, r, language); return }
+        if (r.transcribed) { runSummary(app, r, r.spoken.ifBlank { language }); return }
         val src = Uri.fromFile(store.audio(r))
-        val lang = language.ifBlank { null }
+        val (chosen, fromSetting) = r.chosenLanguage(language)
+        var lang = chosen.ifBlank { null }
+        var heardIt = false
+        var overruled = ""
         val totalMs = r.durationMs.coerceAtLeast(1)
         // 1. the model, fetched once
         val model = Models.byKey(modelKey)
@@ -151,6 +157,21 @@ class ProcessService : Service() {
         var detected = ""
         var aborted = false
         handle.use { WhisperSession(handle.path, Vad.modelPath(this), Voices.load(this)).use { session ->
+            // Before the first piece: which language is spoken, from several passages of speech —
+            // to tell whisper, or to check the language chosen. Skipped only when the person has
+            // already confirmed a language the recording did not seem to speak.
+            if (LanguageChoice.listens(chosen, r.languageSure)) {
+                Live.phase = "language"; Live.percent = 0
+                val heard = listen(src, r.durationMs * 16, session)
+                if (cancelled.get()) return
+                val o = LanguageChoice.decide(chosen, fromSetting, r.languageSure, heard)
+                // Chosen by hand for this recording, and plainly not what it speaks: the person
+                // is asked on the recording's page before minutes go into the wrong language.
+                if (o.ask.isNotBlank()) { store.update(r.id) { it.copy(doubt = o.ask) }; return }
+                lang = o.lang; heardIt = o.heard; overruled = o.overruled
+                Live.language = if (heardIt) lang ?: "" else ""
+                Live.phase = "transcribe"; Live.percent = 0
+            }
             Decode16k.chunks(this, src, CHUNK_SECONDS) { pcm, startMs ->
                 if (cancelled.get()) { aborted = true; return@chunks false }
                 val chunkMs = pcm.size / 16L
@@ -160,12 +181,16 @@ class ProcessService : Service() {
                 }
                 if (segs == null) { aborted = true; return@chunks false }
                 if (detected.isEmpty()) detected = session.language()
+                // Listening found nothing it could name: the language whisper finds in the first
+                // piece holds for the rest, so the pieces agree and the style sentence applies.
+                if (lang == null && detected.isNotBlank()) { lang = detected; heardIt = true; Live.language = detected }
                 segs.forEach { segments += it.copy(startMs = it.startMs + startMs, endMs = it.endMs + startMs) }
                 true
             }
         } }
         if (aborted || cancelled.get()) return
         store.setTranscript(r, Paragraphs.build(segments, getString(R.string.no_speech)))
+        store.update(r.id) { it.copy(spoken = lang ?: detected, heard = heardIt, overruled = overruled, doubt = "") }
         store.writeSegments(r, segments, lang ?: detected)
         // 3. the listening copy, streamed in two passes: high-pass, loudness, AAC
         if (app.prefs.settings.value.cleanOnPhone) {
@@ -178,6 +203,35 @@ class ProcessService : Service() {
         //    slowest and the least essential step, and a recording must never lose its transcript
         //    because the summary failed. Silent when the model is not here — the setting offers it.
         runSummary(app, r, lang ?: detected)
+    }
+
+    /**
+     * Listen for the language over several passages of a recording [total] samples long (16 kHz).
+     * One decoding pass keeps only the windows [Language] will look at — a few seconds of memory
+     * whatever the length — and stops once past the last of them.
+     */
+    private fun listen(src: Uri, total: Long, session: WhisperSession): Language.Heard? {
+        if (total <= 0) return null
+        val windows = Language.candidates(total).associateWith { at -> FloatArray(minOf(Language.WINDOW.toLong(), total - at).toInt()) }
+        val end = windows.maxOf { (at, w) -> at + w.size }
+        var pos = 0L
+        Decode16k.chunks(this, src, CHUNK_SECONDS) { pcm, _ ->
+            if (cancelled.get()) return@chunks false
+            val a = pos; val b = pos + pcm.size
+            for ((at, w) in windows) {
+                val from = maxOf(a, at); val to = minOf(b, at + w.size)
+                if (from < to) System.arraycopy(pcm, (from - a).toInt(), w, (from - at).toInt(), (to - from).toInt())
+            }
+            pos = b
+            b < end
+        }
+        if (cancelled.get()) return null
+        val heard = Language.detect(session, total, { at, n -> windows[at]?.let { if (it.size == n) it else it.copyOf(n) } ?: FloatArray(n) }) {
+            Live.percent = it.coerceIn(0, 99)
+        }
+        android.util.Log.i("ReadersRecorder", "language heard: ${heard?.language} " +
+            "${heard?.probs?.entries?.sortedByDescending { it.value }?.take(3)} over ${heard?.passages} passages")
+        return heard
     }
 
     /**
@@ -267,7 +321,9 @@ class ProcessService : Service() {
     /** What the screens and the notification show while a recording is being worked on. */
     object Live {
         var id by mutableStateOf("")
-        var phase by mutableStateOf("")   // model | decode | transcribe | clean
+        var phase by mutableStateOf("")   // model | decode | language | transcribe | clean
+        /** The language heard on the recording being transcribed, once it is known. */
+        var language by mutableStateOf("")
         var percent by mutableIntStateOf(0)
     }
 
@@ -281,7 +337,9 @@ class ProcessService : Service() {
         fun phaseLabel(ctx: Context, phase: String, percent: Int): String = when (phase) {
             "model" -> ctx.getString(R.string.phase_model, percent)
             "decode" -> ctx.getString(R.string.phase_decode)
-            "transcribe" -> ctx.getString(R.string.phase_transcribe, percent)
+            "language" -> ctx.getString(R.string.phase_language)
+            "transcribe" -> ctx.getString(R.string.phase_transcribe, percent) +
+                (if (Live.language.isNotBlank()) " · " + ctx.getString(R.string.heard_line, Prefs.spokenName(ctx, Live.language)) else "")
             "clean" -> ctx.getString(R.string.phase_clean)
             "summary" -> ctx.getString(R.string.phase_summary, percent)
             else -> ctx.getString(R.string.phase_waiting)
@@ -295,6 +353,8 @@ class ProcessService : Service() {
          */
         fun needsWork(app: App, r: Recording, s: com.freedomfighter.readersrecorder.data.Settings): Boolean {
             if (r.durationMs <= 0 || r.error.isNotBlank() || r.mode(s.processing) != "phone") return false
+            // A question about the language waits on the recording's page: nothing until it is answered.
+            if (!r.transcribed && r.doubt.isNotBlank()) return false
             if (!r.transcribed) return true
             // Turning the option on applies to what is recorded from then on; the fifty recordings
             // already there are not summarised in one silent night of processor time. Any older one

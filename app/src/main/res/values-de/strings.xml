@@ -57,7 +57,14 @@
     <string name="fetch_cleaned">bereinigten Ton zurückholen</string>
     <string name="forget_server">Cloud-Ordner vergessen (Aufnahmen bleiben hier)</string>
     <string name="language">gesprochene Sprache</string>
-    <string name="language_auto">erkannt</string>
+    <string name="language_auto">automatisch erkannt</string>
+    <string name="language_title">Welche Sprache wird gesprochen?</string>
+    <string name="transcribe_lang">transkribieren · Sprache: %1$s</string>
+    <string name="language_doubt">Gehörte Sprache: %1$s. Gewählte Sprache: %2$s.</string>
+    <string name="phase_language">Sprache wird erkannt…</string>
+    <string name="heard_line">gehörte Sprache: %1$s</string>
+    <string name="heard_setting_line">gehörte Sprache: %1$s — Einstellung: %2$s</string>
+    <string name="chosen_line">gewählte Sprache: %1$s</string>
     <string name="ask_server">Server — bei kDrive nur die Nummer aus der Webadresse</string>
     <string name="ask_username">Benutzername (E-Mail)</string>
     <string name="ask_password">Passwort (App-Passwort bei Zwei-Faktor-Anmeldung)</string>

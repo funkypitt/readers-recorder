@@ -39,7 +39,22 @@ data class Recording(
      */
     val summaryTries: Int = 0,
     /** Asked for by hand from the recording's menu: summarised even though it predates the option. */
-    val summaryAsked: Boolean = false
+    val summaryAsked: Boolean = false,
+    /**
+     * The language picked for THIS recording from its menu: "" = the setting's, "auto" = found by
+     * listening, else a language code.
+     */
+    val language: String = "",
+    /** The person kept [language] after being told the recording sounds like another: not asked again. */
+    val languageSure: Boolean = false,
+    /** The language heard when it plainly is not the one picked for this recording: a question waits. */
+    val doubt: String = "",
+    /** The language the transcript is written in, once it is. */
+    val spoken: String = "",
+    /** [spoken] was found by listening to the recording (rather than taken as chosen). */
+    val heard: Boolean = false,
+    /** The setting's language, when the recording plainly spoke another and was transcribed in that one. */
+    val overruled: String = ""
 ) {
     /** The date and time, shown small under the title. */
     val whenLabel: String get() = defaultTitle(createdAt)
@@ -55,6 +70,13 @@ data class Recording(
         return if (!named || t.isEmpty()) "${d}_$kind" else "${d}_$t"
     }
     val status: String get() = when { transcribed -> "transcribed"; cleaned -> "cleaned"; uploaded -> "uploaded"; else -> "phone" }
+
+    /** What the transcription is told before listening: the language chosen ("" = none), and whether it is the standing setting's. */
+    fun chosenLanguage(setting: String): Pair<String, Boolean> = when (language) {
+        "auto" -> "" to false
+        "" -> setting to setting.isNotBlank()
+        else -> language to false
+    }
 
     companion object {
         /** Two goes at the summary, then never again unless it is asked for by hand. */
@@ -92,7 +114,9 @@ class Store(context: Context) {
                 o.optBoolean("uploaded"), o.optBoolean("cleaned"), o.optBoolean("transcribed"), o.optString("error"), o.optString("via"),
                 // older entries: a title that is not the date was typed by hand
                 o.optBoolean("named", o.optString("title").let { it.isNotBlank() && it != Recording.defaultTitle(o.getLong("createdAt")) }),
-                o.optInt("summaryTries"), o.optBoolean("summaryAsked"))
+                o.optInt("summaryTries"), o.optBoolean("summaryAsked"),
+                o.optString("language"), o.optBoolean("languageSure"), o.optString("doubt"),
+                o.optString("spoken"), o.optBoolean("heard"), o.optString("overruled"))
         }.sortedByDescending { it.createdAt }
     }.getOrDefault(emptyList())
 
@@ -100,7 +124,9 @@ class Store(context: Context) {
         val arr = JSONArray()
         list.forEach { r ->
             arr.put(JSONObject().put("id", r.id).put("title", r.title).put("createdAt", r.createdAt).put("durationMs", r.durationMs).put("kind", r.kind)
-                .put("uploaded", r.uploaded).put("cleaned", r.cleaned).put("transcribed", r.transcribed).put("error", r.error).put("via", r.via).put("named", r.named).put("summaryTries", r.summaryTries).put("summaryAsked", r.summaryAsked))
+                .put("uploaded", r.uploaded).put("cleaned", r.cleaned).put("transcribed", r.transcribed).put("error", r.error).put("via", r.via).put("named", r.named).put("summaryTries", r.summaryTries).put("summaryAsked", r.summaryAsked)
+                .put("language", r.language).put("languageSure", r.languageSure).put("doubt", r.doubt)
+                .put("spoken", r.spoken).put("heard", r.heard).put("overruled", r.overruled))
         }
         val tmp = File(index.parentFile, "recordings.json.tmp")
         tmp.writeText(arr.toString())

@@ -57,7 +57,14 @@
     <string name="fetch_cleaned">traer de vuelta el audio limpio</string>
     <string name="forget_server">olvidar la carpeta en la nube (las grabaciones se quedan aquí)</string>
     <string name="language">idioma hablado</string>
-    <string name="language_auto">detectado</string>
+    <string name="language_auto">reconocido automáticamente</string>
+    <string name="language_title">¿Qué idioma se habla?</string>
+    <string name="transcribe_lang">transcribir · idioma: %1$s</string>
+    <string name="language_doubt">Idioma que se oye: %1$s. Idioma elegido: %2$s.</string>
+    <string name="phase_language">reconociendo el idioma hablado…</string>
+    <string name="heard_line">idioma que se oye: %1$s</string>
+    <string name="heard_setting_line">idioma que se oye: %1$s — ajuste: %2$s</string>
+    <string name="chosen_line">idioma elegido: %1$s</string>
     <string name="ask_server">servidor — para kDrive, solo el número de su dirección web</string>
     <string name="ask_username">usuario (correo)</string>
     <string name="ask_password">contraseña (contraseña de aplicación si hay verificación en dos pasos)</string>

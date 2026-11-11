@@ -57,7 +57,14 @@
     <string name="fetch_cleaned">забирать очищенный звук</string>
     <string name="forget_server">забыть облачную папку (записи останутся здесь)</string>
     <string name="language">язык речи</string>
-    <string name="language_auto">определяется</string>
+    <string name="language_auto">определяется автоматически</string>
+    <string name="language_title">На каком языке говорят?</string>
+    <string name="transcribe_lang">расшифровать · язык: %1$s</string>
+    <string name="language_doubt">Слышен язык: %1$s. Выбран язык: %2$s.</string>
+    <string name="phase_language">определение языка речи…</string>
+    <string name="heard_line">слышен язык: %1$s</string>
+    <string name="heard_setting_line">слышен язык: %1$s — в настройках: %2$s</string>
+    <string name="chosen_line">выбран язык: %1$s</string>
     <string name="ask_server">сервер — для kDrive достаточно номера из веб-адреса</string>
     <string name="ask_username">имя пользователя (e-mail)</string>
     <string name="ask_password">пароль (пароль приложения при двухфакторной защите)</string>

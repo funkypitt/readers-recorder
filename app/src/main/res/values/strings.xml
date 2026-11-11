@@ -59,7 +59,14 @@
     <string name="fetch_cleaned">fetch the cleaned audio back</string>
     <string name="forget_server">forget the cloud folder (recordings stay here)</string>
     <string name="language">language spoken</string>
-    <string name="language_auto">detected</string>
+    <string name="language_auto">recognised automatically</string>
+    <string name="language_title">Which language is spoken?</string>
+    <string name="transcribe_lang">transcribe · language: %1$s</string>
+    <string name="language_doubt">Language heard: %1$s. Language chosen: %2$s.</string>
+    <string name="phase_language">listening for the language spoken…</string>
+    <string name="heard_line">language heard: %1$s</string>
+    <string name="heard_setting_line">language heard: %1$s — setting: %2$s</string>
+    <string name="chosen_line">language chosen: %1$s</string>
     <string name="ask_server">server — for kDrive, just the number in its web address</string>
     <string name="ask_username">username (e-mail)</string>
     <string name="ask_password">password (an application password if two-factor is on)</string>

@@ -2,6 +2,8 @@ package com.freedomfighter.readersrecorder.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.freedomfighter.readers.speech.whisper.Prompts
+import com.freedomfighter.readersrecorder.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -22,8 +24,12 @@ data class Settings(
     val folder: String = "Recordings",
     val username: String = "",
     val password: String = "",
-    /** Language hint for the transcription: the phone's language by default, "" = detect. */
-    val language: String = Prefs.deviceLanguage(),
+    /**
+     * The language every recording is transcribed in, as a standing setting: "" (the default) =
+     * found by listening to the recording. A language set here is still checked against what is
+     * heard: a recording plainly in another language is transcribed in that one, and says so.
+     */
+    val language: String = "",
     /** Kind the next recording starts on: memo, lecture, conversation. */
     val kind: String = "memo",
     /** Fetch the cleaned audio back and play it instead of the original. */
@@ -62,7 +68,7 @@ class Prefs(context: Context) {
         folder = sp.getString("folder", "Recordings") ?: "Recordings",
         username = sp.getString("username", "") ?: "",
         password = sp.getString("password", "") ?: "",
-        language = sp.getString("language", deviceLanguage()) ?: deviceLanguage(),
+        language = storedLanguage(sp.getString("language", null)),
         kind = sp.getString("kind", "memo") ?: "memo",
         fetchCleaned = sp.getBoolean("fetch_cleaned", true),
         // "cloud" only exists in the private build; a stored value from elsewhere falls back to the phone.
@@ -105,8 +111,18 @@ class Prefs(context: Context) {
         }
         val KINDS = listOf("memo", "lecture", "conversation")
         fun deviceLanguage(): String = java.util.Locale.getDefault().language.takeIf { it.isNotBlank() } ?: "en"
-        /** What the language row offers: the phone's language, English, detected. */
-        fun languages(): List<String> = listOf(deviceLanguage(), "en", "").distinct()
+        /**
+         * The setting as stored. The phone's language used to be the default, and it was never
+         * written down: a phone that never touched the row has nothing stored, and now listens.
+         * A language stored was picked on the row by hand, and stays (it is checked when used).
+         */
+        fun storedLanguage(raw: String?): String = raw?.trim() ?: ""
+        /** What the language row offers: found by listening first, then the phone's language, English and the others. */
+        fun languages(): List<String> = Prompts.choices(deviceLanguage())
+        /** A language in the phone's words, inside a sentence: "anglais" on a French phone; "" is found by listening. */
+        fun spokenName(ctx: Context, code: String): String =
+            if (code.isBlank()) ctx.getString(R.string.language_auto)
+            else java.util.Locale.forLanguageTag(code).getDisplayLanguage(java.util.Locale.getDefault()).ifBlank { code }
         fun raw(context: Context): SharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     }
 }

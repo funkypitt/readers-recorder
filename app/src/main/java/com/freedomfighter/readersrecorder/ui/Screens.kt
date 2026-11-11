@@ -306,6 +306,7 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
     val scope = rememberCoroutineScope()
     var menu by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf(false) }
+    var choosingLanguage by remember { mutableStateOf(false) }
     // The shared player: what plays here also shows in the widget, the launcher tile and the notification.
     val pl = PlayerService.Live
     val isThis = pl.id == id
@@ -359,8 +360,10 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
                     T(points, Modifier.padding(horizontal = rowPadH, vertical = 8.dp), size = typo.title, align = TextAlign.Start, lineHeightMul = 1.4f)
                     Rule(Modifier.padding(vertical = 8.dp))
                 }
+                if (transcript.isNotBlank() && r.spoken.isNotBlank()) Small(spokenLine(context, r), Modifier.padding(horizontal = rowPadH).padding(top = 16.dp), maxLines = 3)
                 when {
                     transcript.isNotBlank() -> T(transcript, Modifier.padding(horizontal = rowPadH, vertical = 16.dp), size = typo.title, align = TextAlign.Start, lineHeightMul = 1.4f)
+                    !r.transcribed && r.doubt.isNotBlank() && ProcessService.Live.id != r.id -> LanguageQuestion(app, r)
                     ProcessService.Live.id == r.id -> Small(ProcessService.phaseLabel(context, ProcessService.Live.phase, ProcessService.Live.percent), Modifier.padding(horizontal = rowPadH, vertical = 16.dp), maxLines = 3)
                     r.error.isNotBlank() -> Small(r.error, Modifier.padding(horizontal = rowPadH, vertical = 16.dp).noRippleClickable { app.store.update(r.copy(error = "")); ProcessService.kick(context) }, maxLines = 6)
                     r.mode(settings.processing) == "phone" -> Small(stringResource(R.string.transcript_phone_pending), Modifier.padding(horizontal = rowPadH, vertical = 16.dp).noRippleClickable { ProcessService.kick(context) }, maxLines = 4)
@@ -378,7 +381,8 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
             makeNoteItem(context, app, r, transcript)?.let { add(it) }
             if (settings.configured && !r.uploaded) add(MenuItem(stringResource(R.string.upload_now)) { app.sync() })
             if (settings.configured && r.uploaded && r.error.isNotBlank()) add(MenuItem(stringResource(R.string.retry)) { app.store.update(r.copy(error = "")); app.sync() })
-            if (r.mode(settings.processing) == "phone" && !r.transcribed) add(MenuItem(stringResource(R.string.transcribe_now)) { app.store.update(r.copy(error = "")); ProcessService.kick(context) })
+            // The language is named on the way to the transcription, so it cannot be missed.
+            if (r.mode(settings.processing) == "phone" && !r.transcribed) add(MenuItem(stringResource(R.string.transcribe_now)) { choosingLanguage = true })
             // The points, asked for by hand: after two failed goes the queue leaves a recording
             // alone, and this is how it is told to try once more.
             if (settings.summaryOnPhone && r.transcribed && !app.store.summaryFile(r).exists() &&
@@ -392,12 +396,53 @@ fun DetailScreen(nav: Nav, app: App, id: String) {
                 app.store.delete(r.id); nav.pop()
             })
         }, onDismiss = { menu = false })
+        if (choosingLanguage) {
+            // What would happen anyway comes first: the setting's language (found by listening by default).
+            val codes = Prefs.languages().let { all -> listOf(settings.language) + all.filter { it != settings.language } }
+            TextMenu(stringResource(R.string.language_title), codes.map { code ->
+                MenuItem(stringResource(R.string.transcribe_lang, Prefs.spokenName(context, code))) {
+                    app.store.update(r.copy(error = "", doubt = "", languageSure = false, language = code.ifBlank { "auto" }))
+                    choosingLanguage = false
+                    ProcessService.kick(context)
+                }
+            }, onDismiss = { choosingLanguage = false })
+        }
         if (renaming) TextPrompt(stringResource(R.string.rename), initial = r.title, onDone = { t ->
             val s = settings
             val new = app.store.rename(r, t)
             scope.launch(Dispatchers.IO) { runCatching { Sync.renameRemote(r, new, s) } }
             renaming = false
         }, onCancel = { renaming = false })
+    }
+}
+
+/** Above the transcript: the language it is written in, and how that language was settled. */
+fun spokenLine(context: android.content.Context, r: Recording): String {
+    val name = Prefs.spokenName(context, r.spoken)
+    return when {
+        r.overruled.isNotBlank() -> context.getString(R.string.heard_setting_line, name, Prefs.spokenName(context, r.overruled))
+        r.heard -> context.getString(R.string.heard_line, name)
+        else -> context.getString(R.string.chosen_line, name)
+    }
+}
+
+/**
+ * The recording plainly speaks [Recording.doubt], not the language picked for it: say so, and let
+ * the person pick before minutes go into transcribing in the wrong language. The answer is kept.
+ */
+@Composable
+private fun LanguageQuestion(app: App, r: Recording) {
+    val context = LocalContext.current
+    val chosen = r.chosenLanguage(app.prefs.settings.value.language).first
+    Column(Modifier.padding(vertical = 16.dp)) {
+        Small(context.getString(R.string.language_doubt, Prefs.spokenName(context, r.doubt), Prefs.spokenName(context, chosen)),
+            Modifier.padding(horizontal = rowPadH).padding(bottom = 8.dp), color = LocalColors.current.fg, maxLines = 4)
+        for (code in listOf(r.doubt, chosen)) {
+            TextRow(context.getString(R.string.transcribe_lang, Prefs.spokenName(context, code)), inverted = code == r.doubt) {
+                app.store.update(r.copy(language = code, languageSure = true, doubt = "", error = ""))
+                ProcessService.kick(context)
+            }
+        }
     }
 }
 
@@ -564,10 +609,9 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
                         }
                     }
                 }
-                val languages = Prefs.languages()
-                TextRow(if (s.language.isBlank()) stringResource(R.string.language_auto) else java.util.Locale(s.language).getDisplayLanguage(java.util.Locale.getDefault()), secondary = stringResource(R.string.language)) {
-                    app.prefs.setLanguage(languages[(languages.indexOf(s.language).coerceAtLeast(0) + 1) % languages.size])
-                }
+                // A list rather than a row that cycles: there are nine answers, and the one in use
+                // must be seen at a glance, not reached by tapping past the others.
+                TextRow(Prefs.spokenName(context, s.language), secondary = stringResource(R.string.language)) { prompt = "language" }
                 TextRow(kindLabel(s.kind), secondary = stringResource(R.string.next_kind)) { app.prefs.setKind(Prefs.KINDS[(Prefs.KINDS.indexOf(s.kind) + 1) % Prefs.KINDS.size]) }
                 Rule(Modifier.padding(vertical = 8.dp))
                 TextRow(themeName(s.theme), secondary = stringResource(R.string.colours)) { app.prefs.nextTheme() }
@@ -598,6 +642,9 @@ fun SettingsScreen(nav: Nav, app: App, setup: Boolean = false) {
             "password" -> TextPrompt(stringResource(R.string.ask_password), initial = draft.third, password = true, confirm = stringResource(R.string.connect),
                 onDone = { v -> app.prefs.setAccount(draft.first, s.folder, draft.second, v); app.prefs.setProcessing("cloud"); prompt = null; app.sync() }, onCancel = { prompt = null })
             "folder" -> TextPrompt(stringResource(R.string.folder), initial = s.folder, onDone = { v -> app.prefs.setAccount(s.server, v, s.username, s.password); prompt = null; app.sync() }, onCancel = { prompt = null })
+            "language" -> TextMenu(stringResource(R.string.language_title), Prefs.languages().map { code ->
+                MenuItem((if (code == s.language) "● " else "") + Prefs.spokenName(context, code)) { app.prefs.setLanguage(code); prompt = null }
+            }, onDismiss = { prompt = null })
         }
     }
 }
