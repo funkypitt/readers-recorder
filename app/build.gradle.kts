@@ -8,8 +8,8 @@ plugins {
 // one adds what only this workstation can serve (cleaning and transcription by the computer
 // behind the WebDAV folder). Its version code stays 500 ahead, so a public release can never
 // land on the phone as an "update" and quietly take those features away.
-val baseVersionCode = 27
-val baseVersionName = "1.15.0"
+val baseVersionCode = 28
+val baseVersionName = "1.16.0"
 
 android {
     namespace = "com.freedomfighter.readersrecorder"
