@@ -194,6 +194,10 @@ def clean(src, workdir, args):
     out = workdir / f"{src.stem}_nettoye.mp3"
     if script.exists() and not args.no_nettoyer:
         cmd = [sys.executable, str(script), str(src), "-o", str(workdir), "--moteur", args.moteur]
+        # voices at different distances from the phone are brought closer together (the phone's
+        # own cleaning does the same, Leveler.kt); an older toolkit does not know the option
+        if "--niveler-tours" in script.read_text(encoding="utf-8", errors="ignore"):
+            cmd.append("--niveler-tours")
         if args.cpu:
             cmd.append("--cpu")
         r = subprocess.run(cmd, cwd=TOOLKIT, capture_output=True, text=True, timeout=3 * 3600)

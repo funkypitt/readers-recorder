@@ -1,0 +1,1 @@
+The cleaned copy now brings the voices of a conversation closer together: someone sitting further from the phone is raised towards the person beside it. Each speaker's turn keeps one steady volume, which only changes during a pause, so no word is faded in or out. The transcription still reads the original recording.
